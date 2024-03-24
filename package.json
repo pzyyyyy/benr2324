@@ -1,0 +1,15 @@
+{
+  "name": "berr-2243",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.0.0-beta.2"
+  },
+  "devDependencies": {}
+}
