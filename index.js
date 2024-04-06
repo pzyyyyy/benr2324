@@ -4,9 +4,34 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json())
 
-app.get('/', (req, res) => {
-   res.send('Its me!!')
+//Add express server.method({endpoint})
+//1)new user registration
+app.post('/userRegistre',(req,res)=>{
+    //insetOne
+    console.log('new user registration')
 })
+
+//2)get user profile
+app.get('/userReadAcc', (req, res) => {
+   //fineOne
+   //console.log('get user profile')   
+   console.log(req) 
+
+})
+
+//3)update user profile
+app.patch('/userUpdatAcc', (req, res) => {
+   //updateOne
+    console.log('update user profile')
+})
+
+//4)delete user profile
+app.delete('/userDeleteAcc', (req, res) => {
+   //deleteOne
+    console.log('delete user profile')
+})
+app.get('/') 
+
 
 app.listen(port, () => {
    console.log(`Example app listening on port ${port}`)
