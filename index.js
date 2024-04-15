@@ -5,7 +5,6 @@ const bcrypt =require('bcrypt');
 
 app.use(express.json())
 
-//Add express server.method({endpoint})
 //1)new user registration
 app.post('/userRegister',async(req, res)=>{
     
@@ -29,7 +28,7 @@ app.post('/login',async(req, res)=>{
       //password: req.body.password
 
       //Step1: Check user name if exist
-      let result=await client.db(" BERR2243").collection("student").findOne(
+      let result=await client.db("BERR2243").collection("student").findOne(
         {username: req.body.username    //pwd alrdy hash
       })
 
@@ -100,32 +99,6 @@ async function run() {
     // Send a ping to confirm a successful connection
     console.log('Connected successfully to Mongobd server');
 
-    ///insert a document to user collection
-    /*let result=await client.db('BERR2243').collection('student').insertOne(
-      {name:'wong',
-      age: 22,
-    })*/
-
-    ///Read a documents from user collection
-    /*let result=await client.db('BERR2243').collection('student').find(
-      {name:'wong'}).toArray()*/
-    
-    ///update a document in user collection
-    /*let result=await client.db('BERR2243').collection('student').updateOne(
-      {_id: new ObjectID('6605100f439c06190d5fd3de')},
-      {$set:{name:'ME',
-        age:25}}
-    )*/
-
-    ///delete a document in user collection
-    /*let result=await client.db('BERR2243').collection('student').deleteOne(
-      {_id: new ObjectId('6605100f439c06190d5fd3de')})
-      */
-
-    //console.log(result)
-
-    ////await client.db("admin").command({ ping: 1 });
-    ////console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     ////await client.close();
