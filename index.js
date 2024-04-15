@@ -24,6 +24,22 @@ app.post('/userRegister',async(req, res)=>{
     })
     res.send(result)
 })
+app.post('/login',async(req, res)=>{
+      //username: req.body.username         //data of user shound keyin
+      //password: req.body.password
+
+      //Step1: Check user name if exist
+      let result=await client.db(" BERR2243").collection("student").findOne(
+        {username: req.body.username    //pwd alrdy hash
+      })
+
+      if(!result) res.send("Username not found")
+
+   console.log (result)
+
+      //Step2: Check if password is correct
+      
+    })
 
 //2)get user profile
 app.get('/userReadAcc/:wong/:siow', async(req, res) =>   // /userReadAcc is endpoint,/:wong is a parameter
