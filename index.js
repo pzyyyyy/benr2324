@@ -18,7 +18,7 @@ app.post('/userRegister',async(req, res)=>{
     let result= await client.db('BERR2243').collection('student').insertOne(
       {
         username: req.body.username,
-        password: req.body.password,      //all infos one from body
+        password: hash,      //all infos one from body
         name: req.body.name,
         email:req.body.email  
     })
