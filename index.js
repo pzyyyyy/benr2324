@@ -9,7 +9,7 @@ app.use(express.json())
 //1)new user registration
 app.post('/userRegister',async(req, res)=>{
     
-const hash =bcrypt.hashSyncy(req.body.password,10);
+  const hash =bcrypt.hashSyncy(req.body.password,10);
 
     //console.log(req.body)    //to find data in body of requeast
     //console.log('new user registration')      //to findwhere the data is stored
