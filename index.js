@@ -1,22 +1,44 @@
 const express = require('express')
 const app = express()
 const port = process.env.PORT || 3000;
+const bcrypt =require('bcrypt');
 
 app.use(express.json())
 
 //Add express server.method({endpoint})
 //1)new user registration
-app.post('/userRegistre',(req,res)=>{
+app.post('/userRegister',async(req, res)=>{
+    
+const hash =bcrypt.hashSyncy(req.body.password,10);
+
+    //console.log(req.body)    //to find data in body of requeast
+    //console.log('new user registration')      //to findwhere the data is stored
+
     //insetOne
-    console.log('new user registration')
+    let result= await client.db('BERR2243').collection('student').insertOne(
+      {
+        username: req.body.username,
+        password: req.body.password,      //all infos one from body
+        name: req.body.name,
+        email:req.body.email  
+    })
+    res.send(result)
 })
 
 //2)get user profile
-app.get('/userReadAcc', (req, res) => {
+app.get('/userReadAcc/:wong/:siow', async(req, res) =>   // /userReadAcc is endpoint,/:wong is a parameter
+{   
    //fineOne
    //console.log('get user profile')   
-   console.log(req) 
-
+   console.log(req.params.wong)        //to find the parameter
+   let result=await client.db('BERR2243').collection('student').findOne(
+    {
+      name:req.params.wong, //para must same as endpoint
+      //name:req.params.siow  //2nd para must same as endpoint
+      
+    }
+   )
+    
 })
 
 //3)update user profile
@@ -65,7 +87,7 @@ async function run() {
 
     ///Read a documents from user collection
     /*let result=await client.db('BERR2243').collection('student').find(
-      {name:'wong'}).toArray();*/
+      {name:'wong'}).toArray()*/
     
     ///update a document in user collection
     /*let result=await client.db('BERR2243').collection('student').updateOne(
@@ -79,7 +101,7 @@ async function run() {
       {_id: new ObjectId('6605100f439c06190d5fd3de')})
       */
 
-    console.log(result)
+    //console.log(result)
 
     ////await client.db("admin").command({ ping: 1 });
     ////console.log("Pinged your deployment. You successfully connected to MongoDB!");
