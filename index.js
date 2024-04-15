@@ -23,7 +23,7 @@ app.post('/userRegister',async(req, res)=>{
         email:req.body.email  
     })
     res.send(result)
-})
+    })
 app.post('/login',async(req, res)=>{
       //username: req.body.username         //data of user shound keyin
       //password: req.body.password
@@ -33,13 +33,18 @@ app.post('/login',async(req, res)=>{
         {username: req.body.username    //pwd alrdy hash
       })
 
-      if(!result) res.send("Username not found")
-
-   console.log (result)
-
+    if(!result) {res.send("Username not found")}
+    else{
       //Step2: Check if password is correct
-      
-    })
+      if(bcrypt.compareSync(req.body.password,result.password)==true){
+        res.send("Login success")
+      }else{
+        res.send("Wrong password")
+      }
+    }
+    console.log (result)
+  }
+)
 
 //2)get user profile
 app.get('/userReadAcc/:wong/:siow', async(req, res) =>   // /userReadAcc is endpoint,/:wong is a parameter
