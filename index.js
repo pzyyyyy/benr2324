@@ -6,12 +6,9 @@ const bcrypt =require('bcrypt');
 app.use(express.json())
 
 //1)new user registration
-app.post('/userRegister',async(req, res)=>{
+app.post('/user',async(req, res)=>{
     
   const hash =bcrypt.hashSync(req.body.password,10);
-
-    //console.log(req.body)    //to find data in body of requeast
-    //console.log('new user registration')      //to findwhere the data is stored
 
     //insetOne
     let result= await client.db('BERR2243').collection('student').insertOne(
@@ -47,34 +44,36 @@ app.post('/login',async(req, res)=>{
 
 
 //get user profile
-app.get('/user/:userId', async(req, res) =>     //:id is parameter,link limiande endpoint yehuichuxian
-{   
-  fineOne
-   console.log(req.params.userId)   
-
-   let result =await client.db('BERR2243').collection('student').findOne(
-      { name:req.params.userId
-  
-    }
-   )
-  })
-
-//3)update user profile
-app.patch('/user', (req, res) => {
-   //updateOne
-    console.log('update user profile')
+app.get('/user/:name', async(req, res) => {
+  let result = await client.db('BERR2243').collection('student').findOne({ 
+   name:req.params.name   //name:new ObjectId(req.params.name) ZHAO DOC BY USING ID HAOMA
+  })                      //params jia 'name' as endpoint
+ 
+  res.send(result)
 })
 
-//4)delete user profile
-app.delete('/user', (req, res) => {
-   //deleteOne
-    console.log('delete user profile')
+//patch(update) user profile
+app.patch('/user/:name', async(req, res) => {
+  let result = await client.db('BERR2243').collection('student').updateOne(
+    {_id:new ObjectId(req.params.name)},
+    {$set:{name:req.body.name}
+  })
+  res.send(result)
+})
+
+//delete user profile
+app.delete('/user/:name', async(req, res) => {
+  let result = await client.db('BERR2243').collection('student').deleteOne()
+    res.send(result)
+  
 })
 
 
 app.listen(port, () => {
    console.log(`Example app listening on port ${port}`)
 })
+app.get('/') 
+
 
 //Path:package.json
 const { MongoClient, ServerApiVersion,ObjectId } = require('mongodb');
