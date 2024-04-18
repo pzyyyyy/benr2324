@@ -45,34 +45,31 @@ app.post('/login',async(req, res)=>{
   }
 )
 
-//2)get user profile
-app.get('/userReadAcc/:wong/:siow', async(req, res) =>   // /userReadAcc is endpoint,/:wong is a parameter
+
+//get user profile
+app.get('/user/:userId', async(req, res) =>     //:id is parameter,link limiande endpoint yehuichuxian
 {   
-   //fineOne
-   //console.log('get user profile')   
-   console.log(req.params.wong)        //to find the parameter
-   let result=await client.db('BERR2243').collection('student').findOne(
-    {
-      name:req.params.wong, //para must same as endpoint
-      //name:req.params.siow  //2nd para must same as endpoint
-      
+  fineOne
+   console.log(req.params.userId)   
+
+   let result =await client.db('BERR2243').collection('student').findOne(
+      { name:req.params.userId
+  
     }
    )
-    
-})
+  })
 
 //3)update user profile
-app.patch('/userUpdatAcc', (req, res) => {
+app.patch('/user', (req, res) => {
    //updateOne
     console.log('update user profile')
 })
 
 //4)delete user profile
-app.delete('/userDeleteAcc', (req, res) => {
+app.delete('/user', (req, res) => {
    //deleteOne
     console.log('delete user profile')
 })
-app.get('/') 
 
 
 app.listen(port, () => {
