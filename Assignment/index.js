@@ -186,9 +186,85 @@ app.patch('/characterupdate/:charactername',async(req,res) => {
     });
     res.send(character);
     }
-  }
-)
+  })
 
+app.post('/send_friend_request/:username', async(req, res) => {
+    const fromUser = req.params.username;
+    const toUser = req.body.to;
+   
+    // Check if the user exists
+    const toUserExists = await client.db("Assignment").collection("users").findOne({ name: toUser });
+    if (!toUserExists) {
+       return res.status(400).send("User does not exist");
+    }
+   
+    // Check if a request already exists
+    const existingRequest = await client.db("Assignment").collection("users").findOne({
+       name: toUser,
+       "friendRequests.from": fromUser
+    });
+    if (existingRequest) {
+       return res.status(400).send("Friend request sent successfully");
+    }
+    // Add the friend request
+    const result = await client.db("Assignment").collection("users").updateOne({
+       name: toUser
+    }, {
+       $push: {
+         friendRequests: {
+           from: fromUser,
+           status: "pending"
+         }
+       }
+    });
+   
+    res.send({ message: "Friend request sent successfully" });
+   });
+
+   app.post('/accept_friend_request/:username', async(req, res) => {
+    const toUser = req.params.username;
+    const fromUser = req.body.from;
+   
+    // Find the friend request
+    const user = await client.db("Assignment").collection("users").findOne({
+       name: toUser,
+       "friendRequests.from": fromUser
+    });
+   
+    if (!user) {
+       return res.status(400).send("Friend request not found");
+    }
+   
+    // Update the friend request status to accepted
+    await client.db("Assignment").collection("users").updateOne({
+       name: toUser,
+       "friendRequests.from": fromUser
+    }, {
+       $set: {
+         "friendRequests.$.status": "accepted"
+       }
+    });
+   
+    // Add the requester to the recipient's friends list
+    await client.db("Assignment").collection("users").updateOne({
+       name: toUser
+    }, {
+       $addToSet: {
+         friends: fromUser
+       }
+    });
+   
+    // Optionally, add the recipient to the requester's friends list
+    await client.db("Assignment").collection("users").updateOne({
+       name: fromUser
+    }, {
+       $addToSet: {
+         friends: toUser
+       }
+    });
+   
+    res.send({ message: "Friend request accepted" });
+   });
 app.patch('/addfriend/:username',async(req,res) => {
     // Assuming req.body.friends is an array of friend names
   const friends = req.body.friend;
@@ -218,7 +294,7 @@ app.patch('/addfriend/:username',async(req,res) => {
           }
         });
         
-        res.send("friend added successfully");
+        res.send("Add friend successfully");
         console.log(friend_addition,friend_addition2);
         
       } else {
