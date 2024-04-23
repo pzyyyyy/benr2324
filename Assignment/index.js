@@ -10,9 +10,9 @@ app.use(express.static('public'));
 //e.g using for registration
 
 app.post('/register',async(req,res) => {
-    let existing = await client.db("Assignment").collection("users").findOne({
+    let existing = await client.db("Assignment").collection("players").findOne({
       name: req.body.username
-  }) || await client.db("Assignment").collection("users").findOne({
+  }) || await client.db("Assignment").collection("players").findOne({
       email: req.body.email
   });
 
@@ -21,7 +21,7 @@ app.post('/register',async(req,res) => {
     } else {
       const hash = bcrypt.hashSync(req.body.password, 10);
   
-    let resq = await client.db("Assignment").collection("users").insertOne({
+    let resq = await client.db("Assignment").collection("players").insertOne({
           name: req.body.username,
           password: hash,
           email: req.body.email,
@@ -68,11 +68,11 @@ app.post('/character' ,async(req,res) => {
 )
 
 app.post('/login',async(req,res) => { 
-  let resp = (await client.db("Assignment").collection("users").findOne({
+  let resp = (await client.db("Assignment").collection("players").findOne({
     name: req.body.username
 })    
 )||(
-    await client.db("Assignment").collection("users").findOne({
+    await client.db("Assignment").collection("players").findOne({
     email: req.body.email
     }));
 
@@ -101,7 +101,7 @@ if (req.body.password) {
 //get read user profile
 app.get('/read/:id',async(req,res) => {
   
-  let rep = await client.db("Assignment").collection("users").findOne({
+  let rep = await client.db("Assignment").collection("players").findOne({
     //username: req.params.username
     _id: new ObjectId(req.params.id)
   
@@ -193,13 +193,13 @@ app.post('/send_friend_request/:username', async(req, res) => {
     const toUser = req.body.to;
    
     // Check if the user exists
-    const toUserExists = await client.db("Assignment").collection("users").findOne({ name: toUser });
+    const toUserExists = await client.db("Assignment").collection("players").findOne({ name: toUser });
     if (!toUserExists) {
        return res.status(400).send("User does not exist");
     }
    
     // Check if a request already exists
-    const existingRequest = await client.db("Assignment").collection("users").findOne({
+    const existingRequest = await client.db("Assignment").collection("players").findOne({
        name: toUser,
        "friendRequests.from": fromUser
     });
@@ -226,7 +226,7 @@ app.post('/send_friend_request/:username', async(req, res) => {
     const fromUser = req.body.from;
    
     // Find the friend request
-    const user = await client.db("Assignment").collection("users").findOne({
+    const user = await client.db("Assignment").collection("players").findOne({
        name: toUser,
        "friendRequests.from": fromUser
     });
@@ -337,7 +337,7 @@ app.patch('/addfriend/:username',async(req,res) => {
 //update user profile
 app.patch('/update/:id',async(req,res) => {
 
-      let require = await client.db("Assignment").collection("users").updateOne({
+      let require = await client.db("Assignment").collection("players").updateOne({
         _id: new ObjectId(req.params.id)
       },{
         $set:{
@@ -365,7 +365,7 @@ app.patch('/battle/:id_1/:id_2',async(req,res) => {
 
 //delete user profile
 app.delete('/delete/:id',async(req,res) => {
-  let delete_req = await client.db("Assignment").collection("users").deleteOne({
+  let delete_req = await client.db("Assignment").collection("players").deleteOne({
     _id: new ObjectId(req.params.id)
   });
   res.send(delete_req);
@@ -377,8 +377,11 @@ app.listen(port, () => {
 })
 
 
+
+
+
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const uri = "mongodb+srv://samuel:yeehai@benr2423.jgm92s9.mongodb.net/?retryWrites=true&w=majority&appName=BENR2423";
+const uri = "mongodb+srv://soklywn2612:Asdfghjkl2326@cluster0.isqzhdd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
