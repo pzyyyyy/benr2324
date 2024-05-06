@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 const port = process.env.PORT || 3000;
 const bcrypt =require('bcrypt');
+const jwt=require('jsonwebtoken');
 
 app.use(express.json())
 
@@ -15,8 +16,8 @@ app.post('/user',async(req, res)=>{
       {
         username: req.body.username,
         password: hash,      //all infos one from body
-        name: req.body.name,
-        email:req.body.email  
+        //name: req.body.name,
+        //email:req.body.email  
     })
     res.send(result)
     })
@@ -33,7 +34,9 @@ app.post('/login',async(req, res)=>{
     else{
       //Step2: Check if password is correct
       if(bcrypt.compareSync(req.body.password,result.password)==true){
-        res.send("Login success")
+        var token = jwt.sign({_id:result._id , username:result.username},'Super secret passkey',{ expiresIn: 10*60 });
+        res.send(token)
+        //res.send("Login success")
       }else{
         res.send("Wrong password")
       }
@@ -68,6 +71,12 @@ app.delete('/user/:name', async(req, res) => {
   
 })
 
+app.post('/buy',async(req, res)=>{
+  //  console.log(req.headers.authorization.split("")[1])
+  const token=req.headers.authorization.split(" ")[1]
+  var decoded=jwt.verify(token,'Super secret passkey');
+  console.log(decoded)
+})
 
 app.listen(port, () => {
    console.log(`Example app listening on port ${port}`)
