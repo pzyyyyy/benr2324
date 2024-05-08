@@ -119,7 +119,7 @@ app.get("/read/:id", async (req, res) => {
 app.get("/leaderboard", async (req, res) => {
   let leaderboard = await client
     .db("Assignment")
-    .collection("users")
+    .collection("players")
     .find()
     .sort({
       PlayerPowerLevel: -1,

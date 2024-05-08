@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 
 app.use(express.json());
 
-//1)new user registration
+//new user registration
 app.post("/user", async (req, res) => {
   const hash = bcrypt.hashSync(req.body.password, 10);
 
