@@ -30,13 +30,13 @@ app.post("/login", async (req, res) => {
     if (result) {
       //Step2: Check if password is correct
       if (bcrypt.compareSync(req.body.password, result.password) == true) {
-        //var token = jwt.sign(
-        // { _id: result._id, username: result.username, name: result.name },
-        //  "Super secret passkey",
-        //  { expiresIn: 10 * 60 }
-        // );
-        //res.send(token);
-        res.send("Login success");
+        var token = jwt.sign(
+          { _id: result._id, username: result.username, name: result.name },
+          "Super secret passkey",
+          { expiresIn: 10 * 60 }
+        );
+        res.send(token);
+        //res.send("Login success");
       } else {
         res.status(401).send("Wrong password");
       }
@@ -50,11 +50,10 @@ app.post("/login", async (req, res) => {
   }
 });
 
-//get user profile
+//get user profile with token
 app.get("/getprofile/:id", async (req, res) => {
   const token = req.headers.authorization.split(" ")[1];
   let decoded = jwt.verify(token, "Super secret passkey");
-
   if (decoded) {
     //if user is login
     if (decoded._id == req.params.id) {
@@ -66,7 +65,6 @@ app.get("/getprofile/:id", async (req, res) => {
           name: req.params.name,
           _id: new ObjectId(req.params.id),
         }); //find the user profile
-
       res.send(result);
     } else {
       res.status(401).send("Unauthorized access");
