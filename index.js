@@ -7,57 +7,77 @@ const jwt = require("jsonwebtoken");
 app.use(express.json());
 
 //new user registration
-app.post("/user", async (req, res) => {
+app.post("/reg", async (req, res) => {
   const hash = bcrypt.hashSync(req.body.password, 10);
 
   //insetOne
   let result = await client.db("BERR2243").collection("student").insertOne({
     username: req.body.username,
-    password: hash, //all infos one from body
-    //name: req.body.name,
-    //email:req.body.email
+    password: hash,
+    name: req.body.name,
+    email: req.body.email,
   });
   res.send(result);
 });
+
 app.post("/login", async (req, res) => {
-  //username: req.body.username         //data of user shound keyin
-  //password: req.body.password
+  //Step1: req body username exit
+  if (req.body.username != null && req.body.password != null) {
+    let result = await client.db("BERR2243").collection("student").findOne({
+      username: req.body.username, //pwd alrdy hash
+    });
 
-  //Step1: Check user name if exist
-  let result = await client.db("BERR2243").collection("student").findOne({
-    username: req.body.username, //pwd alrdy hash
-  });
-
-  if (!result) {
-    res.send("Username not found");
-  } else {
-    //Step2: Check if password is correct
-    if (bcrypt.compareSync(req.body.password, result.password) == true) {
-      var token = jwt.sign(
-        { _id: result._id, username: result.username },
-        "Super secret passkey",
-        { expiresIn: 10 * 60 }
-      );
-      res.send(token);
-      //res.send("Login success")
+    if (result) {
+      //Step2: Check if password is correct
+      if (bcrypt.compareSync(req.body.password, result.password) == true) {
+        //var token = jwt.sign(
+        // { _id: result._id, username: result.username, name: result.name },
+        //  "Super secret passkey",
+        //  { expiresIn: 10 * 60 }
+        // );
+        //res.send(token);
+        res.send("Login success");
+      } else {
+        res.status(401).send("Wrong password");
+      }
     } else {
-      res.send("Wrong password");
+      // step #3: if user not found
+      res.status(401).send("username is not found");
     }
+  } else {
+    res.status(400).send("missing username or password");
+    // console.log(result)
   }
-  console.log(result);
 });
 
 //get user profile
-app.get("/user/:name", async (req, res) => {
-  let result = await client.db("BERR2243").collection("student").findOne({
-    name: req.params.name, //name:new ObjectId(req.params.name) ZHAO DOC BY USING ID HAOMA
-  }); //params jia 'name' as endpoint
+app.get("/getprofile/:id", async (req, res) => {
+  const token = req.headers.authorization.split(" ")[1];
+  let decoded = jwt.verify(token, "Super secret passkey");
 
-  res.send(result);
+  if (decoded) {
+    //if user is login
+    if (decoded._id == req.params.id) {
+      //if user is accessing his own profile
+      let result = await client
+        .db("BERR2243")
+        .collection("student")
+        .findOne({
+          name: req.params.name,
+          _id: new ObjectId(req.params.id),
+        }); //find the user profile
+
+      res.send(result);
+    } else {
+      res.status(401).send("Unauthorized access");
+    }
+  } else {
+    res.status(401).send("Unauthorized");
+  }
 });
 
 //patch(update) user profile
-app.patch("/user/:name", async (req, res) => {
+app.patch("/user/:id", verifyToken, async (req, res) => {
   let result = await client
     .db("BERR2243")
     .collection("student")
@@ -69,7 +89,7 @@ app.patch("/user/:name", async (req, res) => {
 });
 
 //delete user profile
-app.delete("/user/:name", async (req, res) => {
+app.delete("/user/:id", verifyToken, async (req, res) => {
   let result = await client.db("BERR2243").collection("student").deleteOne();
   res.send(result);
 });
@@ -86,10 +106,25 @@ app.listen(port, () => {
 });
 app.get("/");
 
+//middleware
+function verifyToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1]; //split by space
+  if (token == null) return res.sendStatus(401);
+  jwt.verify(token, "Super secret passkey", (err, decoded) => {
+    console.log(err);
+    if (err) {
+      return res.sendStatus(403);
+      req.identify = decoded;
+      next();
+    }
+  });
+}
+
 //Path:package.json
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri =
-  "mongodb+srv://soklywn2612:Asdfghjkl2326@cluster0.isqzhdd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+  "mongodb+srv://b022210249:Asdfghjkl2326@cluster0.qexjojg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {

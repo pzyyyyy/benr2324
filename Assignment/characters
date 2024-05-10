@@ -1,0 +1,11 @@
+[{"_id":{"$oid":"663e4fac150099d496492021"},
+"name":"Pantheon","health":{"$numberInt":"10000"},
+"attack":{"$numberInt":"600"},
+"defense":{"$numberInt":"7000"},
+"type":"fighter",
+"character_power":{"$numberInt":"5000"}},
+{"_id":{"$oid":"663e4ff0150099d496492022"},"name":"Juggernaut","health":{"$numberInt":"3000"},"attack":{"$numberInt":"300"},"defense":{"$numberInt":"400"},"type":"fighter","character_power":{"$numberInt":"3000"}},{"_id":{"$oid":"663e4fff150099d496492023"},"name":"Ornn","health":{"$numberInt":"6000"},"attack":{"$numberInt":"150"},"defense":{"$numberInt":"450"},"type":"tank","character_power":{"$numberInt":"2900"}},
+{"_id":{"$oid":"663e5013150099d496492024"},"name":"Blyad","health":{"$numberInt":"1000000"},"attack":{"$numberInt":"9999"},"defense":{"$numberInt":"99999"},"type":"calamity","character_power":{"$numberInt":"9999999"}},
+{"_id":{"$oid":"663e501f150099d496492025"},"name":"Pantheon","health":{"$numberInt":"10000"},"attack":{"$numberInt":"600"},"defense":{"$numberInt":"7000"},"type":"fighter","character_power":{"$numberInt":"5000"}},
+{"_id":{"$oid":"663e5027150099d496492026"},"name":"Vayne","health":{"$numberInt":"8000"},"attack":{"$numberInt":"690"},"defense":{"$numberInt":"5000"},"type":"assassin","character_power":{"$numberInt":"4000"}
+}]

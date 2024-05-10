@@ -1,0 +1,49 @@
+[{
+  "_id": {
+    "$oid": "6625b7be19a120d17f92294f"
+  },
+  "chest":"Common",
+  "price":{"$numberInt":"50"},
+  "characters":["Juggernaut","Ornn","Pantheon","Vayne"],
+  "total_power_level":{"$numberInt":"4000"}
+},
+{
+  "_id": {
+    "$oid": "6625b89f19a120d17f922951"
+  },
+
+  "chest":"Rare",
+  "price":{"$numberInt":"100"},
+  "characters":["Ornn","Pantheon","Vayne"],
+  "total_power_level":{"$numberInt":"7500"}
+},
+{
+  "_id": {
+    "$oid": "6625b90519a120d17f922952"
+  },
+  "chest":"Epic",
+  "price":{"$numberInt":"400"},
+  "characters":["Ornn","Pantheon","Vayne"],
+  "total_power_level":{"$numberInt":"10000"}
+},
+{
+  "_id": {
+    "$oid": "6625b94519a120d17f922953"
+  },
+  "chest":"Legendary",
+  "price":{"$numberInt":"1000"},
+  "characters":["Pantheon","Vayne"],
+  "total_power_level":{"$numberInt":"12000"}
+},
+{
+  "_id": {
+    "$oid": "6625c94019a120d17f922954"
+  },
+  "chest":"Champion",
+  "price":{"$numberInt":"1500"},
+  "characters":["Vayne"],
+  "total_power_level":{"$numberInt":"14900"}
+}
+]
+
+
