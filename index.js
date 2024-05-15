@@ -32,8 +32,8 @@ app.post("/login", async (req, res) => {
       if (bcrypt.compareSync(req.body.password, result.password) == true) {
         var token = jwt.sign(
           { _id: result._id, username: result.username, name: result.name },
-          "Super secret passkey",
-          { expiresIn: 10 * 60 }
+          "Super secret passkey"
+          // { expiresIn: 100 * 60 }
         );
         res.send(token);
         //res.send("Login success");
@@ -50,30 +50,49 @@ app.post("/login", async (req, res) => {
   }
 });
 
+//middleware
+function verifyToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
+  if (token == null) return res.sendStatus(401);
+  jwt.verify(token, "Super secret passkey", (err, decoded) => {
+    console.log(err);
+    if (err) return res.sendStatus(403);
+    req.identify = decoded;
+    next();
+  });
+}
+
 //get user profile with token
-app.get("/getprofile/:id", async (req, res) => {
+app.get("/getprofile/:id", verifyToken, async (req, res) => {
+  console.log("YES");
   const token = req.headers.authorization.split(" ")[1];
   let decoded = jwt.verify(token, "Super secret passkey");
+
   if (decoded) {
     //if user is login
-    if (decoded._id == req.params.id) {
+    if (req.identify._id != req.params.id) {
       //if user is accessing his own profile
-      let result = await client
-        .db("BERR2243")
-        .collection("student")
-        .findOne({
-          name: req.params.name,
-          _id: new ObjectId(req.params.id),
-        }); //find the user profile
-      res.send(result);
+      res.status(401).send("Unauthorized Access");
     } else {
-      res.status(401).send("Unauthorized access");
+      let result = await client.db("BERR2243").collection("student");
+      // .findOne({
+      //   _id: new ObjectId(req.params.id),
+      // }); //find the user profile by using id
+      res.send(result);
+      console.log(req.params);
     }
   } else {
     res.status(401).send("Unauthorized");
   }
 });
+app.get("/user/:name", async (req, res) => {
+  let result = await client.db("BERR2243").collection("student").findOne({
+    name: req.params.name, //name:new ObjectId(req.params.name)
+  });
 
+  res.send(result);
+});
 //patch(update) user profile
 app.patch("/user/:id", verifyToken, async (req, res) => {
   let result = await client
@@ -139,6 +158,7 @@ async function run() {
     await client.connect();
     // Send a ping to confirm a successful connection
     console.log("Connected successfully to Mongobd server");
+    console.log("Client: ", client.uri);
   } finally {
     // Ensures that the client will close when you finish/error
     ////await client.close();
