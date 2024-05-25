@@ -7,7 +7,6 @@ app.use(express.json());
 app.use(express.static("public"));
 
 //e.g using for registration
-
 app.post("/register", async (req, res) => {
   let existing =
     (await client.db("Assignment").collection("players").findOne({
@@ -21,19 +20,68 @@ app.post("/register", async (req, res) => {
     res.status(400).send("username or email already exist");
   } else {
     const hash = bcrypt.hashSync(req.body.password, 10);
-
-    let resq = await client.db("Assignment").collection("players").insertOne({
-      name: req.body.username,
-      password: hash,
-      email: req.body.email,
-      gender: req.body.gender,
-      collection: req.body.collection,
-      money: req.body.money,
+    let count = await client
+      .db("Assignment")
+      .collection("players")
+      .countDocuments();
+    let resq = await client
+      .db("Assignment")
+      .collection("players")
+      .insertOne({
+        name: req.body.username,
+        player_id: count,
+        password: hash,
+        email: req.body.email,
+        gender: req.body.gender,
+        collection: [],
+        money: 0,
+        points: 0,
+        achievments: [],
+        friends: [
+          {
+            friend_id: 0,
+            sentRequests: [],
+          },
+        ], //can do relationship??
+        starterPackTaken: false,
+      });
+    res.send({
+      message:
+        "Congratulation! Your account register succesfully! Log in to start your battle journey!",
+      data: resq,
     });
-    res.send(resq);
   }
 });
 
+app.patch("/login/starterpack/:numId", async (req, res) => {
+  const min = 1000;
+  const max = 2000;
+  const newMoneyAmount = Math.floor(Math.random() * (max - min + 1)) + min;
+  let user = await client
+    .db("Assignment")
+    .collection("players")
+    .findOneAndUpdate(
+      {
+        $and: [
+          {
+            player_id: parseInt(req.params.numId),
+          },
+          { starterPackTaken: { $eq: false } },
+        ],
+      },
+      { $set: { starterPackTaken: true, money: newMoneyAmount } },
+      { returnOriginal: false }
+    );
+  if (user === null) {
+    res.status(400).send("Starter pack already taken");
+  } else {
+    res.send(
+      `Total amount of RM ${newMoneyAmount} is given to ${req.params.numId} player`
+    );
+  }
+});
+
+//in funtion of adding chest
 app.post("/chest", async (req, res) => {
   let existing = await client.db("Assignment").collection("chests").findOne({
     chest: req.body.chest_name,
@@ -47,7 +95,7 @@ app.post("/chest", async (req, res) => {
     res.send(chest);
   }
 });
-
+//in function of adding character
 app.post("/character", async (req, res) => {
   let existing = await client
     .db("Assignment")
@@ -73,49 +121,73 @@ app.post("/character", async (req, res) => {
 });
 
 app.post("/login", async (req, res) => {
-  let resp =
-    (await client.db("Assignment").collection("players").findOne({
-      name: req.body.username,
-    })) ||
-    (await client.db("Assignment").collection("players").findOne({
-      email: req.body.email,
-    }));
-
-  console.log(resp);
-  console.log(req.body);
-
+  let resp = await client
+    .db("Assignment")
+    .collection("players")
+    .findOne({
+      name:
+        req.body.username ||
+        (await client.db("Assignment").collection("players").findOne({
+          email: req.body.email,
+        })),
+    });
   if (!resp) {
     res.send("User not found");
   } else {
     // Check if password is provided
-    if (req.body.password) {
+    if (resp.password) {
       if (bcrypt.compareSync(req.body.password, resp.password)) {
-        res.send("Login successful");
+        res.send("Login successful. Remember to gain your starter pack!");
       } else {
         res.send("Wrong Password");
       }
     } else {
-      // Handle case where password is not provided
-      // This is where you might decide to return an error or a specific message
-      res.send("Password field is missing");
+      res.send("Password not provided");
     }
   }
 });
 
 //get read user profile
-app.get("/read/:id", async (req, res) => {
-  let rep = await client
+app.get("/read/:player_id", async (req, res) => {
+  let document = await client
     .db("Assignment")
     .collection("players")
-    .findOne({
-      //username: req.params.username
-      _id: new ObjectId(req.params.id),
-    });
-
-  res.send(rep);
-  console.log(req.params);
-  //console.log(rep);
+    .aggregate([
+      {
+        $match: { player_id: parseInt(req.params.player_id) },
+      },
+      {
+        $project: {
+          _id: 0,
+          player_id: 1,
+          name: 1,
+          gender: 1,
+          collection: 1,
+          points: 1,
+          achievments: 1,
+        },
+      },
+      {
+        $lookup: {
+          from: "chest",
+          localField: "collection",
+          foreignField: "chests",
+          as: "collection",
+        },
+      },
+      {
+        $lookup: {
+          from: "characters",
+          localField: "collection",
+          foreignField: "name",
+          as: "characterInfo",
+        },
+      },
+    ])
+    .toArray();
+  res.send(document);
 });
+
 app.get("/leaderboard", async (req, res) => {
   let leaderboard = await client
     .db("Assignment")
@@ -128,7 +200,7 @@ app.get("/leaderboard", async (req, res) => {
 
   res.send(leaderboard);
 });
-
+//need Developer token
 app.patch("/add_character_to_chest/:chestId", async (req, res) => {
   const Character = req.body.character_name;
 
@@ -221,7 +293,7 @@ app.patch("/add_character_to_chest/:chestId", async (req, res) => {
     }
   }
 });
-
+//need Developer token
 app.patch("/characterupdate/:charactername", async (req, res) => {
   let existing = await client
     .db("Assignment")
@@ -253,201 +325,166 @@ app.patch("/characterupdate/:charactername", async (req, res) => {
   }
 });
 
-app.post("/send_friend_request/:username", async (req, res) => {
-  const fromUser = req.params.username;
-  const toUser = req.body.to;
-
-  // Check if the user exists
-  const toUserExists = await client
+// Endpoint to send a friend request
+app.post("/send_friend_request/:requesterId/:requestedId", async (req, res) => {
+  // Check if requesterId and requestedId are different
+  if (parseInt(req.params.requesterId) === parseInt(req.params.requestedId)) {
+    return res.status(400).send("You cannot send a friend request to yourself");
+  }
+  // Check if both players exist
+  const requester = await client
     .db("Assignment")
     .collection("players")
-    .findOne({ name: toUser });
-  if (!toUserExists) {
-    return res.status(400).send("User does not exist");
-  }
+    .findOne({ player_id: parseInt(req.params.requesterId) });
 
-  // Check if a request already exists
-  const existingRequest = await client
+  const requested = await client
     .db("Assignment")
     .collection("players")
-    .findOne({
-      name: toUser,
-      "friendRequests.from": fromUser,
-    });
-  if (existingRequest) {
-    return res.status(400).send("Friend request sent successfully");
+    .findOne({ player_id: parseInt(req.params.requestedId) });
+
+  if (!requester || !requested) {
+    return res.status(404).send("Either players not found");
   }
-  // Add the friend request
+  // Check if friend request has already been sent
+  if (
+    requester &&
+    requester.sentRequests &&
+    requester.sentRequests.indexOf(parseInt(req.params.requestedId)) !== -1
+  ) {
+    return res.status(400).send("Friend request already sent");
+  }
+  // Send the friend request
   const result = await client
     .db("Assignment")
-    .collection("users")
+    .collection("players")
     .updateOne(
-      {
-        name: toUser,
-      },
-      {
-        $push: {
-          friendRequests: {
-            from: fromUser,
-            status: "pending",
-          },
-        },
-      }
+      { player_id: parseInt(req.params.requesterId) },
+      { $push: { sentRequests: parseInt(req.params.requestedId) } }
     );
 
-  res.send({ message: "Friend request sent successfully" });
-});
-
-app.post("/accept_friend_request/:username", async (req, res) => {
-  const toUser = req.params.username;
-  const fromUser = req.body.from;
-
-  // Find the friend request
-  const user = await client.db("Assignment").collection("players").findOne({
-    name: toUser,
-    "friendRequests.from": fromUser,
-  });
-
-  if (!user) {
-    return res.status(400).send("Friend request not found");
-  }
-
-  // Update the friend request status to accepted
-  await client
-    .db("Assignment")
-    .collection("users")
-    .updateOne(
-      {
-        name: toUser,
-        "friendRequests.from": fromUser,
-      },
-      {
-        $set: {
-          "friendRequests.$.status": "accepted",
-        },
-      }
-    );
-
-  // Add the requester to the recipient's friends list
-  await client
-    .db("Assignment")
-    .collection("users")
-    .updateOne(
-      {
-        name: toUser,
-      },
-      {
-        $addToSet: {
-          friends: fromUser,
-        },
-      }
-    );
-
-  // Optionally, add the recipient to the requester's friends list
-  await client
-    .db("Assignment")
-    .collection("users")
-    .updateOne(
-      {
-        name: fromUser,
-      },
-      {
-        $addToSet: {
-          friends: toUser,
-        },
-      }
-    );
-
-  res.send({ message: "Friend request accepted" });
-});
-app.patch("/addfriend/:username", async (req, res) => {
-  // Assuming req.body.friends is an array of friend names
-  const friends = req.body.friend;
-
-  // Check if friends array is provided and not empty
-  if (!Array.isArray(friends) || friends.length === 0) {
-    let existing = await client.db("Assignment").collection("users").findOne({
-      name: req.body.friend,
-    });
-
-    if (existing) {
-      //if array of friends not provded
-      let friend_addition = await client
-        .db("Assignment")
-        .collection("users")
-        .updateOne(
-          {
-            name: req.params.username,
-          },
-          {
-            $addToSet: {
-              friends: req.body.friend,
-            },
-          }
-        );
-
-      let friend_addition2 = await client
-        .db("Assignment")
-        .collection("users")
-        .updateOne(
-          {
-            name: req.body.friend,
-          },
-          {
-            $addToSet: {
-              friends: req.params.username,
-            },
-          }
-        );
-
-      res.send("Add friend successfully");
-      console.log(friend_addition, friend_addition2);
-    } else {
-      res.status(400).send("User does not exist");
-    }
+  if (result.modifiedCount === 0) {
+    res.status(400).send("Failed to send friend request");
   } else {
-    //array of friends is present
-    for (const friend of friends) {
-      let existing = await client.db("Assignment").collection("users").findOne({
-        name: friend,
-      });
-
-      if (!existing) {
-        return res.status(400).send(`User ${friend} does not exist`);
-      }
-
-      let friend_addition = await client
-        .db("Assignment")
-        .collection("users")
-        .updateOne(
-          {
-            name: req.params.username,
-          },
-          {
-            $addToSet: {
-              friends: friend,
-            },
-          }
-        );
-      let friend_addition2 = await client
-        .db("Assignment")
-        .collection("users")
-        .updateOne(
-          {
-            name: friend,
-          },
-          {
-            $addToSet: {
-              friends: req.params.username,
-            },
-          }
-        );
-    }
-
-    // Send a response after all friends have been added
-    res.send({ message: "Friends added successfully" });
+    res.send("Friend request sent");
   }
 });
+
+// // Endpoint to accept a friend request
+app.patch(
+  "/accept_friend_request/:requesterId/:requestedId",
+  async (req, res) => {
+    const requesterId = parseInt(req.params.requesterId);
+    const requestedId = parseInt(req.params.requestedId);
+
+    // Move the friend request from sentRequests to friends
+    const result = await client
+      .db("Assignment")
+      .collection("players")
+      .updateOne(
+        { player_id: requestedId, sentRequests: requesterId },
+        {
+          $pull: { sentRequests: requesterId },
+          $push: { friends: requesterId },
+        }
+      );
+
+    if (result.modifiedCount === 0) {
+      res.status(400).send("Failed to accept friend request");
+    } else {
+      res.send("Friend request accepted");
+    }
+  }
+);
+
+// app.patch("/addfriend/numId", async (req, res) => {
+//   // Assuming req.body.friends is an array of friend names
+//   const friends = req.body.friend_id;
+
+//   // Check if friends array is provided and not empty
+//   if (!Array.isArray(friends) || friends.length === 0) {
+//     let existing = await client.db("Assignment").collection("users").findOne({
+//       player_id: req.body.friend_id
+//     });
+
+//     if (existing) {
+//       //if array of friends not provded
+//       let friend_addition = await client
+//         .db("Assignment")
+//         .collection("users")
+//         .updateOne(
+//           {
+//             player_id: req.params.numId,
+//           },
+//           {
+//             $addToSet: {
+//               friends: req.body.friend_id,
+//             },
+//           }
+//         );
+
+//       let friend_addition2 = await client
+//         .db("Assignment")
+//         .collection("users")
+//         .updateOne(
+//           {
+//             name: req.body.friend,
+//           },
+//           {
+//             $addToSet: {
+//               friends: req.params.username,
+//             },
+//           }
+//         );
+
+//       res.send("Add friend successfully");
+//       console.log(friend_addition, friend_addition2);
+//     } else {
+//       res.status(400).send("User does not exist");
+//     }
+//   } else {
+//     //array of friends is present
+//     for (const friend of friends) {
+//       let existing = await client.db("Assignment").collection("users").findOne({
+//         name: friend,
+//       });
+
+//       if (!existing) {
+//         return res.status(400).send(`User ${friend} does not exist`);
+//       }
+
+//       let friend_addition = await client
+//         .db("Assignment")
+//         .collection("users")
+//         .updateOne(
+//           {
+//             name: req.params.username,
+//           },
+//           {
+//             $addToSet: {
+//               friends: friend,
+//             },
+//           }
+//         );
+//       let friend_addition2 = await client
+//         .db("Assignment")
+//         .collection("users")
+//         .updateOne(
+//           {
+//             name: friend,
+//           },
+//           {
+//             $addToSet: {
+//               friends: req.params.username,
+//             },
+//           }
+//         );
+//     }
+
+//     // Send a response after all friends have been added
+//     res.send({ message: "Friends added successfully" });
+//   }
+// });
+
 app.patch("/removefriend/:username", async (req, res) => {
   // Assuming req.body.friends is an array of friend names
   const friends_removed = req.body.friend_to_be_removed;
@@ -617,113 +654,139 @@ app.patch("/buying_chest/:username", async (req, res) => {
   }
 });
 
-app.patch("/money_generator/:username", async (req, res) => {
-  const min = 1000;
-  const max = 2000;
-  const newMoneyAmount = Math.floor(Math.random() * (max - min + 1)) + min;
-
-  let user_existing = await client
+app.get("/battle/:id", async (req, res) => {
+  const name = await client
     .db("Assignment")
-    .collection("users")
-    .findOne({
-      name: req.params.username,
-    });
-
-  if (user_existing) {
-    let money = await client
-      .db("Assignment")
-      .collection("users")
-      .updateOne(
-        {
-          name: req.params.username,
+    .collection("players")
+    .aggregate([
+      {
+        $match: { name: req.params.selectName },
+      },
+      {
+        $project: {
+          _id: 0,
+          name: 1,
+          point: 1,
+          collection: 1,
+          shield: 1,
         },
-        {
-          $set: {
-            money: newMoneyAmount,
-          },
-        }
-      );
-    res.send(`Amount: RM ${newMoneyAmount} is given to ${req.params.username}`);
-    console.log(money);
+      },
+    ])
+    .toArray();
+
+  if (player) {
+    res.send(name);
   } else {
-    res.status(400).send("User not found");
+    res.status(400).send("Player not found");
   }
 });
 
-app.patch("/battle/:name1/:name2", async (req, res) => {
-  let user1 = await client.db("Assignment").collection("users").findOne({
-    name: req.params.name1,
-  });
-  let user2 = await client.db("Assignment").collection("users").findOne({
-    name: req.params.name2,
-  });
+app.post("/battle/:attackerID:/:defenderID", async (req, res) => {
+  // Get the attacker and defender from the database
+  const attacker = await client
+    .db("Game")
+    .collection("Players")
+    .findOne({ id: attackerID });
+  const defender = await client
+    .db("Game")
+    .collection("Players")
+    .findOne({ id: defenderID });
 
-  if (user1 && user2) {
-    if (user1.PlayerPowerLevel > user2.PlayerPowerLevel) {
-      res.send(`${req.params.name1} has won the battle!!`);
+  // Calculate the new health of the defender
+  const newHealth = defender.health - attacker.attackPower;
 
-      user1 = await client
-        .db("Assignment")
-        .collection("users")
-        .updateOne(
-          {
-            name: req.params.name1,
-          },
-          {
-            $inc: {
-              money: 1000,
-            },
-          }
-        );
-      user1 = await client
-        .db("Assignment")
-        .collection("users")
-        .updateOne(
-          {
-            name: req.params.name2,
-          },
-          {
-            $inc: {
-              money: 200,
-            },
-          }
-        );
-    } else {
-      res.send(`${req.params.name2} has won the battle!!`);
+  // Update the defender's health in the database
+  await client
+    .db("Game")
+    .collection("Players")
+    .updateOne({ name: defenderName }, { $set: { health: newHealth } });
 
-      user1 = await client
-        .db("Assignment")
-        .collection("users")
-        .updateOne(
-          {
-            name: req.params.name1,
-          },
-          {
-            $inc: {
-              money: 200,
-            },
-          }
-        );
-      user1 = await client
-        .db("Assignment")
-        .collection("users")
-        .updateOne(
-          {
-            name: req.params.name2,
-          },
-          {
-            $inc: {
-              money: 1000,
-            },
-          }
-        );
-    }
+  // If the defender's new health is less than or equal to 0, they lost the battle
+  if (newHealth <= 0) {
+    res.json({
+      message: `${defenderName} lost the battle. Do you want to attack again?`,
+    });
   } else {
-    res
-      .status(400)
-      .send(`User:${req.params.name1} and User: ${req.params.name2} not found`);
+    res.json({
+      message: `${defenderName} now has ${newHealth} health. Do you want to attack again?`,
+    });
   }
 });
+
+// app.patch("/battle/:name1/:name2", async (req, res) => {
+//   let user1 = await client.db("Assignment").collection("users").findOne({
+//     name: req.params.name1,
+//   });
+//   let user2 = await client.db("Assignment").collection("users").findOne({
+//     name: req.params.name2,
+//   });
+
+//   if (user1 && user2) {
+//     if (user1.PlayerPowerLevel > user2.PlayerPowerLevel) {
+//       res.send(`${req.params.name1} has won the battle!!`);
+
+//       user1 = await client
+//         .db("Assignment+")
+//         .collection("users")
+//         .updateOne(
+//           {
+//             name: req.params.name1,
+//           },
+//           {
+//             $inc: {
+//               money: 1000,
+//             },
+//           }
+//         );
+//       user1 = await client
+//         .db("Assignment")
+//         .collection("users")
+//         .updateOne(
+//           {
+//             name: req.params.name2,
+//           },
+//           {
+//             $inc: {
+//               money: 200,
+//             },
+//           }
+//         );
+//     } else {
+//       res.send(`${req.params.name2} has won the battle!!`);
+
+//       user1 = await client
+//         .db("Assignment")
+//         .collection("users")
+//         .updateOne(
+//           {
+//             name: req.params.name1,
+//           },
+//           {
+//             $inc: {
+//               money: 200,
+//             },
+//           }
+//         );
+//       user1 = await client
+//         .db("Assignment")
+//         .collection("users")
+//         .updateOne(
+//           {
+//             name: req.params.name2,
+//           },
+//           {
+//             $inc: {
+//               money: 1000,
+//             },
+//           }
+//         );
+//     }
+//   } else {
+//     res
+//       .status(400)
+//       .send(`User:${req.params.name1} and User: ${req.params.name2} not found`);
+//   }
+// });
 
 //delete user profile
 app.delete("/delete/:id", async (req, res) => {
