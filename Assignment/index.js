@@ -35,7 +35,11 @@ app.post("/register", async (req, res) => {
         email: req.body.email,
         gender: req.body.gender,
         //I set them as default ya
-        collection: { characterList: ["Lillia"], character_selected: "Lillia" },
+        collection: {
+          characterList: ["Lillia"],
+          character_selected: "Lillia",
+          charId: ["0"],
+        },
         money: 0,
         points: 0,
         achievments: ["A beginner player"],
@@ -43,6 +47,15 @@ app.post("/register", async (req, res) => {
         //can do relationship??
         starterPackTaken: false,
       });
+    let countNum = await client
+      .db("Assignment")
+      .collection("characters_of_players")
+      .countDocuments();
+    await client
+      .db("Assignment")
+      .collection("characters_of_players")
+      .insertOne({ char_id: countNum, name_characters: "Lillia" });
+
     res.send({
       message:
         "Congratulation! Your account register succesfully! Log in to start your battle journey!",
@@ -367,6 +380,15 @@ app.patch(
       res.status(400).send("Failed to accept friend request");
     } else {
       res.send("Friend request accepted");
+      if (player.friends.friendList.length > 5) {
+        await client
+          .db("Assignment")
+          .collection("players")
+          .updateOne(
+            { player_id: parseInt(req.params.requestedId) },
+            { $addToSet: { achievements: "Makes more friends" } }
+          );
+      }
     }
   }
 );
@@ -426,12 +448,15 @@ app.patch("/update/:id", async (req, res) => {
           name: req.body.username,
           email: req.body.email,
           gender: req.body.gender, //password??
+          password: hash,
         },
       }
     );
-
-  res.send(require);
-  console.log(req.body);
+  if (require.modifiedCount === 0) {
+    res.status(400).send("Updated failed");
+  } else {
+    res.send("Profile updated successfully");
+  }
 });
 
 app.delete("/delete/:id", async (req, res) => {
@@ -473,11 +498,20 @@ app.patch("/buying_chest", async (req, res) => {
       { $match: { chest: req.body.chest } },
       { $unwind: "$characters" },
       { $sample: { size: 1 } },
+      {
+        $lookup: {
+          from: "characters",
+          localField: "characters",
+          foreignField: "name",
+          as: "characters",
+        },
+      },
     ])
     .toArray();
   console.log(player);
   console.log(character_in_chest[0]);
   console.log(character_in_chest[0].characters);
+  console.log(character_in_chest[0].characters[0].name);
   console.log(chest);
 
   if (!player) {
@@ -491,16 +525,28 @@ app.patch("/buying_chest", async (req, res) => {
   }
   if (chest) {
     if (
-      player.collection.characterList.includes(character_in_chest[0].characters)
+      player.collection.characterList.includes(
+        character_in_chest[0].characters[0].name
+      )
     ) {
       let powerUp = await client
         .db("Assignment")
         .collection("players")
         .updateOne(
           {
-            $and: [{ name: req.body.name }, { email: req.body.email }],
-            "collection.characterList.name": character_in_chest[0].characters,
+            $and: [
+              { name: req.body.name },
+              { email: req.body.email },
+              {
+                "collection.characterList": {
+                  $elemMatch: {
+                    name: character_in_chest[0].characters[0].name,
+                  },
+                },
+              },
+            ],
           },
+
           {
             $inc: {
               "collection.characterList.$.health": 100,
@@ -523,7 +569,8 @@ app.patch("/buying_chest", async (req, res) => {
           },
           {
             $addToSet: {
-              "collection.characterList": character_in_chest[0].characters,
+              "collection.characterList":
+                character_in_chest[0].characters[0].name,
             },
             $inc: {
               money: -chest.price,
@@ -537,18 +584,20 @@ app.patch("/buying_chest", async (req, res) => {
       if (buying.modifiedCount === 0) {
         return res.send("Failed to buy character");
       } else {
+        let countNum = await client
+          .db("Assignment")
+          .collection("characters_of_players")
+          .countDocuments();
         await client
           .db("Assignment")
           .collection("characters_of_players")
-          .updateOne(
-            { player_id: player.player_id },
+          .insertOne(
+            { char_id: countNum },
             {
-              $addToSet: {
-                _id: new client.ObjectID(),
-                name: character_in_chest[0].characters,
+              $push: {
+                players_characters: character_in_chest[0].characters[0].name,
               },
-            },
-            { upsert: true }
+            } //can delete?
           );
         await client
           .db("Assignment")
@@ -557,16 +606,32 @@ app.patch("/buying_chest", async (req, res) => {
             { player_id: player.player_id },
             {
               $push: {
-                _id: new client.ObjectID(),
-                name: character_in_chest[0].characters,
+                "collection.charId": countNum,
+                // name: character_in_chest[0].characters,
               },
             },
             { upsert: true }
           );
 
+        // Check if the player has collected 21 characters
+        if (player.collection.characterList.length === 21) {
+          await client
+            .db("Assignment")
+            .collection("players")
+            .updateOne(
+              { player_id: player.player_id },
+              {
+                $addToSet: {
+                  achievements:
+                    "Congraturation! You complete the characters collection",
+                },
+              }
+            );
+        }
+
         return res.send(
           "Chest bought successfully, you got " +
-            character_in_chest[0].characters +
+            character_in_chest[0].characters[0].name +
             " in your collection."
         );
       }
@@ -575,90 +640,6 @@ app.patch("/buying_chest", async (req, res) => {
     res.send("Chest not found");
   }
 });
-
-//dunno yet
-// app.patch("/buying_chest", async (req, res) => {
-//   const { name, email, chest: chestName } = req.body;
-
-//   const user = await client
-//     .db("Assignment")
-//     .collection("players")
-//     .findOne({ name, email });
-//   const chest = await client
-//     .db("Assignment")
-//     .collection("chests")
-//     .findOne({ chest: chestName });
-
-//   if (!user) {
-//     return res.status(400).send("User or email are wrong");
-//   }
-
-//   if (!chest || user.money < chest.price) {
-//     return res.send(
-//       "Not enough money to buy chest. Please compete more battles to earn more money"
-//     );
-//   }
-
-//   const character = await client
-//     .db("Assignment")
-//     .collection("chests")
-//     .aggregate([
-//       { $match: { chest: chestName } },
-//       { $unwind: "$characters" },
-//       { $sample: { size: 1 } },
-//     ])
-//     .toArray();
-
-//   if (character.length === 0) {
-//     return res.send("No characters available in the chest");
-//   }
-
-//   const characterName = character[0].characters;
-
-//   if (user.collection.characterList.includes(characterName)) {
-//     await client
-//       .db("Assignment")
-//       .collection("players")
-//       .updateOne(
-//         { name, email },
-//         {
-//           $inc: {
-//             "collection.characterList.character[0].characters.health": 100,
-//             "collection.characterList.character[0].characters.attack": 100,
-//             "collection.characterList.character[0].characters.speed": 0.1,
-//           },
-//         }
-//       );
-
-//     return res.send({
-//       message: "Character already exist in your collection, power up instead",
-//     });
-//   }
-
-//   const char = await client
-//     .db("Assignment")
-//     .collection("character")
-//     .aggregate([
-//       { $match: { name: characterName } },
-//       {
-//         $project: { _id: 0, name: 1, health: 1, attack: 1, speed: 1, type: 1 },
-//       },
-//     ])
-//     .toArray();
-
-//   await client
-//     .db("Assignment")
-//     .collection("players")
-//     .updateOne(
-//       { name, email },
-//       {
-//         $push: { "collection.characterList": char },
-//         $inc: { money: -chest.price },
-//       }
-//     );
-
-//   res.send({ message: "Chest bought successfully, you got " + characterName });
-// });
 
 //put point
 app.get("/leaderboard", async (req, res) => {
@@ -670,7 +651,16 @@ app.get("/leaderboard", async (req, res) => {
       points: -1,
     })
     .toArray();
-
+  if (leaderboard.length > 0) {
+    // Give achievement to the top player
+    await client
+      .db("Assignment")
+      .collection("players")
+      .updateOne(
+        { player_id: leaderboard[0].player_id },
+        { $addToSet: { achievements: "You are the Top of King in this Game" } }
+      );
+  }
   res.send(leaderboard);
 });
 
@@ -702,7 +692,7 @@ app.get("/leaderboard", async (req, res) => {
 // });
 
 app.patch("/battle", async (req, res) => {
-  const attacker = await client
+  const user = await client
     .db("Assignment")
     .collection("players")
     .findOne({
@@ -713,11 +703,38 @@ app.patch("/battle", async (req, res) => {
         },
       ],
     });
+  const attacker = await client
+    .db("Assignment")
+    .collection("players")
+    .aggregate([
+      { $sample: { size: 1 } },
+      { $project: { _id: 0, name: 1, player_id: 1, collection: 1 } },
+      {
+        $lookup: {
+          from: "characters_of_players",
+          localField: "character_selected",
+          foreignField: "char_id",
+          as: "character_selected",
+        },
+      },
+    ]);
   const defender = await client
     .db("Assignment")
     .collection("players")
-    .aggregate([{ $sample: { size: 1 } }])
+    .aggregate([
+      { $sample: { size: 1 } },
+      { $project: { _id: 0, name: 1, player_id: 1, collection: 1 } },
+      {
+        $lookup: {
+          from: "characters_of_players",
+          localField: "character_selected",
+          foreignField: "char_id",
+          as: "character_selected",
+        },
+      },
+    ])
     .toArray();
+
   console.log(attacker);
   console.log(defender[0]);
   //need to read char of player*******
@@ -766,65 +783,67 @@ app.patch("/battle", async (req, res) => {
     }
     await client
       .db("Assignment")
-      .collection("history")
+      .collection("battle_history")
       .updateOne(
         { player_id: attacker.player_id },
         { $push: { battles: battleRecord } },
         { upsert: true }
       );
-
     await client
       .db("Assignment")
-      .collection("history")
+      .collection("players")
       .updateOne(
-        { player_id: defender.player_id },
-        { $push: { battles: battleRecord } },
+        { player_id: player.player_id },
+        {
+          $push: {
+            characters: {
+              _id: countNum,
+              name: character_in_chest[0].characters,
+            },
+          },
+          $addToSet: {
+            achievements: "First win",
+          },
+        },
         { upsert: true }
       );
+
     res.send("Battle completed");
   } else {
     res.status(400).send("Battle failed");
   }
 });
 
-app.patch("/achievements/:player_id", async (req, res) => {
-  try {
-    let user = await client
-      .db("Assignment")
-      .collection("players")
-      .findOneAndUpdate(
-        { player_id: req.params.player_id },
-        { $set: { achievements: { battlesWon: 1, battlesLost: 0 } } }
-      );
-
-    if (user) {
-      if (user.achievements) {
-        res.status(400).send("Achievements already retrieved");
-      } else {
-        await client
-          .db("Assignment")
-          .collection("players")
-          .updateOne(
-            {
-              name: req.params.username,
-            },
-            {
-              $set: {
-                achievements: {
-                  battlesWon: 0,
-                  battlesLost: 0,
-                },
-              },
-            }
-          );
-        res.send("Achievements given");
-      }
-    } else {
-      res.status(400).send("User not found");
-    }
-  } catch (error) {
-    res.status(500).send("Server error");
+app.get("/achievements/:player_id", async (req, res) => {
+  let user = await client
+    .db("Assignment")
+    .collection("players")
+    .findOne({
+      player_id: req.params.player_id,
+      achievements: { $exists: true },
+    });
+  if (!user) {
+    res.status(404).send("Find a way to get your achievements!");
   }
+  res.send(user.achievements);
+});
+
+app.get("/history/:player_id", async (req, res) => {
+  let history = client
+    .db("Assignment")
+    .collection("battle_history")
+    .find({
+      $and: [
+        { player_id: req.params.player_id },
+        { battles: { $exists: true } },
+      ],
+    });
+  console.log(history);
+  if (!history) {
+    return res.status(404).send("No history found for this player");
+  }
+
+  res.send(history);
 });
 
 app.listen(port, () => {
