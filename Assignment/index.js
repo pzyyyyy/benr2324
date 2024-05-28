@@ -681,7 +681,6 @@ app.get("/battle/:id", async (req, res) => {
           name: 1,
           point: 1,
           collection: 1,
-          shield: 1,
         },
       },
     ])
@@ -694,19 +693,23 @@ app.get("/battle/:id", async (req, res) => {
   }
 });
 
-app.post("/battle/:attackerId:/:defenderId", async (req, res) => {
+app.post("/battle", async (req, res) => {
   // Get the attacker and defender from the database
   const attacker = await client
-    .db("Game")
-    .collection("Players")
-    .findOne({ player_id: parseInt(req.params.attackerId) });
+    .db("Assignment")
+    .collection("players")
+    .findOne({
+      $and: { player_id: parseInt(req.body.name), name: req.body.name },
+    });
+
   const defender = await client
-    .db("Game")
-    .collection("Players")
-    .findOne({ player_id: parseInt(req.params.defenderId) });
+    .db("Assignment")
+    .collection("players")
+    .aggregate([{ $sample: { size: 1 } }])
+    .toArray();
 
   // Calculate the new health of the defender
-  const newHealth = defender.health - attacker.attackPower;
+  const newHealth = defender.health - attacker.attackPower * attacker.speed;
 
   // Update the defender's health in the database
   await client
