@@ -34,7 +34,8 @@ app.post("/register", async (req, res) => {
         password: hash,
         email: req.body.email,
         gender: req.body.gender,
-        collection: { characterList: [], character_selected: [] },
+        //I set them as default ya
+        collection: { characterList: ["Lillia"], character_selected: "Lillia" },
         money: 0,
         points: 0,
         achievments: ["A beginner player"],
@@ -110,20 +111,19 @@ app.post("/character", async (req, res) => {
         name: req.body.character_name,
         health: req.body.health,
         attack: req.body.attack,
-        defense: req.body.defense,
         type: req.body.type,
       });
     res.send(character);
   }
 });
 
-app.post("/login", async (req, res) => {
+app.get("/login", async (req, res) => {
   let resp = await client
     .db("Assignment")
     .collection("players")
     .findOne({
       name:
-        req.body.username ||
+        req.body.name ||
         (await client.db("Assignment").collection("players").findOne({
           email: req.body.email,
         })),
@@ -195,19 +195,6 @@ app.get("/read/:player_id", async (req, res) => {
   res.send(document);
 });
 
-//put point
-app.get("/leaderboard", async (req, res) => {
-  let leaderboard = await client
-    .db("Assignment")
-    .collection("players")
-    .find()
-    .sort({
-      points: -1,
-    })
-    .toArray();
-
-  res.send(leaderboard);
-});
 //need Developer token
 app.patch("/add_character_to_chest", async (req, res) => {
   let result2 = await client
@@ -469,13 +456,17 @@ app.get("/chests", async (req, res) => {
 });
 
 app.patch("/buying_chest", async (req, res) => {
-  let userVerify = await client
+  let player = await client
     .db("Assignment")
     .collection("players")
     .findOne({
       $and: [{ name: req.body.name }, { email: req.body.email }],
     });
-  let character = await client
+  let chest = await client.db("Assignment").collection("chests").findOne({
+    chest: req.body.chest,
+  });
+  // Randomly select a character from the characters array
+  let character_in_chest = await client
     .db("Assignment")
     .collection("chests")
     .aggregate([
@@ -484,62 +475,56 @@ app.patch("/buying_chest", async (req, res) => {
       { $sample: { size: 1 } },
     ])
     .toArray();
-  const chest = await client.db("Assignment").collection("chests").findOne({
-    chest: req.body.chest,
-  });
+  // a = character_in_chest[0].characters;
+  console.log(character_in_chest[0].characters);
 
-  if (!userVerify) {
+  if (!player) {
     return res.status(400).send("User or email are wrong");
-  } else if (userVerify.money < chest.price) {
+  } // Check if the player has enough money
+  if (player.money < chest.price) {
     return res.send(
       "Not enough money to buy chest. Please compete more battles to earn more money"
     );
-  } else {
-    if (chest) {
-      // Check if the player has enough money
-      let user = await client
-        .db("Assignment")
-        .collection("players")
-        .findOne({
-          $or: [{ name: req.body.name }, { email: req.body.email }],
-        });
+  }
 
-      if (user.money < chest.price) {
-        return res.send("Not enough money to buy a character");
-      } else {
-        // Randomly select a character from the characters array
+  if (chest) {
+    if (player.money < chest.price) {
+      return res.send("Not enough money to buy a character");
+    }
 
-        // If a character was selected, add it to the user's collection
-        if (user.collection.characterList.includes(character[0].characters)) {
-          let powerUp = await client
-            .db("Assignment")
-            .collection("players")
-            .updateOne(
-              {
-                $and: [{ name: req.body.name }, { email: req.body.email }],
+    if (character_in_chest.length > 0) {
+      if (
+        player.collection.characterList.includes(
+          character_in_chest[0].characters
+        )
+      ) {
+        let powerUp = await client
+          .db("Assignment")
+          .collection("players")
+          .updateOne(
+            {
+              $and: [{ name: req.body.name }, { email: req.body.email }],
+            },
+            {
+              $inc: {
+                "collection.characterList.a.health": 100,
+                "collection.characterList.a.attack": 100,
+                "collection.characterList.a.speed": 0.1,
               },
-              {
-                $inc: {
-                  "collection.characterList.character[0].characters.health": 100,
-                  "collection.characterList.character[0].characters.attack": 100,
-                  "collection.characterList.character[0].characters.speed": 0.1,
-                },
-              }
-            );
-          return res.send(
-            powerUp,
-            "Character already exist in your collection, power up instead"
+            }
           );
-        }
-      } // Add this closing bracket
-      if (character.length > 0) {
-        const char = await client
+        return res.send(
+          powerUp,
+          "Character already exist in your collection, power up instead"
+        );
+      } else {
+        let char = await client
           .db("Assignment")
           .collection("characters")
           .aggregate([
             {
               $match: {
-                name: character[0].characters,
+                name: character_in_chest[0].characters,
               },
             },
             {
@@ -552,35 +537,48 @@ app.patch("/buying_chest", async (req, res) => {
                 type: 1,
               },
             },
-          ])
-          .toArray();
+          ]);
 
         let buying = await client
           .db("Assignment")
           .collection("players")
           .updateOne(
             {
-              $and: [{ name: req.body.name }, { email: req.body.email }],
+              player_id: player.player_id,
             },
             {
               $push: {
-                "collection.characterList": char.body,
+                "collection.characterList": char,
               },
               $inc: {
                 money: -chest.price,
               },
             }
           );
-        return res.send(
-          "Chest bought successfully, you got " + character[0].characters
-        );
-      } else {
-        res.send("No characters available in the chest");
+        if (buying.modifiedCount === 0) {
+          return res.send("Failed to buy character");
+        } else {
+          await client
+            .db("Assignment")
+            .collection("characters of players")
+            .updateOne(
+              { player_id: player.player_id },
+              { $addToSet: { players_characters: char } },
+              { upsert: true }
+            );
+
+          return res.send(
+            "Chest bought successfully, you got " +
+              character_in_chest[0].characters +
+              " in your collection."
+          );
+        }
       }
-      {
-        res.send("Chest not found");
-      }
+    } else {
+      res.send("No characters available in the chest");
     }
+  } else {
+    res.send("Chest not found");
   }
 });
 //dunno yet
@@ -667,144 +665,133 @@ app.patch("/buying_chest", async (req, res) => {
 //   res.send({ message: "Chest bought successfully, you got " + characterName });
 // });
 
-app.get("/battle/:id", async (req, res) => {
-  const name = await client
+//put point
+app.get("/leaderboard", async (req, res) => {
+  let leaderboard = await client
     .db("Assignment")
     .collection("players")
-    .aggregate([
-      {
-        $match: { name: req.params.selectName },
-      },
-      {
-        $project: {
-          _id: 0,
-          name: 1,
-          point: 1,
-          collection: 1,
-        },
-      },
-    ])
+    .find()
+    .sort({
+      points: -1,
+    })
     .toArray();
 
-  if (player) {
-    res.send(name);
-  } else {
-    res.status(400).send("Player not found");
-  }
+  res.send(leaderboard);
 });
 
-app.post("/battle", async (req, res) => {
-  // Get the attacker and defender from the database
+//This api useless
+// app.get("/battle/:id", async (req, res) => {
+//   const name = await client
+//     .db("Assignment")
+//     .collection("players")
+//     .aggregate([
+//       {
+//         $match: { name: req.params.selectName },
+//       },
+//       {
+//         $project: {
+//           _id: 0,
+//           name: 1,
+//           point: 1,
+//           collection: 1,
+//         },
+//       },
+//     ])
+//     .toArray();
+
+//   if (player) {
+//     res.send(name);
+//   } else {
+//     res.status(400).send("Player not found");
+//   }
+// });
+
+app.patch("/battle", async (req, res) => {
   const attacker = await client
     .db("Assignment")
     .collection("players")
     .findOne({
-      $and: { player_id: parseInt(req.body.name), name: req.body.name },
+      $and: [
+        {
+          name: req.body.name,
+          email: req.body.email,
+        },
+      ],
     });
-
   const defender = await client
     .db("Assignment")
     .collection("players")
     .aggregate([{ $sample: { size: 1 } }])
     .toArray();
+  console.log(attacker);
+  console.log(defender[0])
+  //need to read char of player*******
+  let newHealthAttacker = attacker.collection.character_selected.character.health;
+  let newHealthDefender = defender[0].collection.character_selected.character.health;
+  let battleCount = 0;
+  if (attacker.player_id === defender[0].player_id) {
+    return res.status(400).send("You cannot battle with yourself");
+  }
+  if (!attacker || !defender[0]) {
+    return res.status(400).send("Player not found");
+  }
+  if (attacker && defender) {
+    while (newHealthAttacker > 0 && newHealthDefender > 0) {
+      newHealthAttacker -=
+        attacker.character_selected.attack * attacker.character_selected.speed;
+      newHealthDefender -=
+        defender[0].character_selected.attack *
+        defender[0].character_selected.speed;
+      battleCount++;
+    }
+    let winner =
+      newHealthAttacker > newHealthDefender
+        ? attacker.name
+        : defender[0].name;
+    let battleRecord = {
+      attacker: attacker.name,
+      defender: defender.name,
+      battleCount: battleCount,
+      winner: winner,
+      date: new Date().getDate(),
+    };
+    console.log(battleRecord);
+    console.log(winner);
+    await client
+      .db("Assignment")
+      .collection("players")
+      .updateOne({winner.player_id}, {$inc: {winner.points: 1}
+      });
 
-  // Calculate the new health of the defender
-  const newHealth = defender.health - attacker.attackPower * attacker.speed;
+    if (newHealthAttacker <= 0) {
+      res.send(`Nice try, you will be better next time!`);
+    } else {
+      res.send(
+        `Congratulations, you won the battle after ${battleCount} rounds!`
+      );
+    }
+    await client
+      .db("Assignment")
+      .collection("history")
+      .updateOne(
+        { player_id: attacker.player_id },
+        { $push: { battles: battleRecord } },
+        { upsert: true }
+      );
 
-  // Update the defender's health in the database
-  await client
-    .db("Game")
-    .collection("Players")
-    .updateOne({ name: defenderName }, { $set: { health: newHealth } });
-
-  // If the defender's new health is less than or equal to 0, they lost the battle
-  if (newHealth <= 0) {
-    res.json({
-      message: `${defenderName} lost the battle. Do you want to attack again?`,
-    });
+    await client
+      .db("Assignment")
+      .collection("history")
+      .updateOne(
+        { player_id: defender.player_id },
+        { $push: { battles: battleRecord } },
+        { upsert: true }
+      );
+    res.send("Battle completed");
   } else {
-    res.json({
-      message: `${defenderName} now has ${newHealth} health. Do you want to attack again?`,
-    });
+    res.status(400).send("Battle failed");
   }
 });
-
-// app.patch("/battle/:name1/:name2", async (req, res) => {
-//   let user1 = await client.db("Assignment").collection("users").findOne({
-//     name: req.params.name1,
-//   });
-//   let user2 = await client.db("Assignment").collection("users").findOne({
-//     name: req.params.name2,
-//   });
-
-//   if (user1 && user2) {
-//     if (user1.PlayerPowerLevel > user2.PlayerPowerLevel) {
-//       res.send(`${req.params.name1} has won the battle!!`);
-
-//       user1 = await client
-//         .db("Assignment+")
-//         .collection("users")
-//         .updateOne(
-//           {
-//             name: req.params.name1,
-//           },
-//           {
-//             $inc: {
-//               money: 1000,
-//             },
-//           }
-//         );
-//       user1 = await client
-//         .db("Assignment")
-//         .collection("users")
-//         .updateOne(
-//           {
-//             name: req.params.name2,
-//           },
-//           {
-//             $inc: {
-//               money: 200,
-//             },
-//           }
-//         );
-//     } else {
-//       res.send(`${req.params.name2} has won the battle!!`);
-
-//       user1 = await client
-//         .db("Assignment")
-//         .collection("users")
-//         .updateOne(
-//           {
-//             name: req.params.name1,
-//           },
-//           {
-//             $inc: {
-//               money: 200,
-//             },
-//           }
-//         );
-//       user1 = await client
-//         .db("Assignment")
-//         .collection("users")
-//         .updateOne(
-//           {
-//             name: req.params.name2,
-//           },
-//           {
-//             $inc: {
-//               money: 1000,
-//             },
-//           }
-//         );
-//     }
-//   } else {
-//     res
-//       .status(400)
-//       .send(`User:${req.params.name1} and User: ${req.params.name2} not found`);
-//   }
-// });
-
-//delete user profile
 
 app.patch("/achievements/:player_id", async (req, res) => {
   try {
