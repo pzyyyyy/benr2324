@@ -41,7 +41,7 @@ app.post("/register", async (req, res) => {
         //I set them as default ya
         collection: {
           characterList: ["Lillia"],
-          character_selected: "Lillia",
+          character_selected: { name: "Lillia", charId: countNum },
           charId: [countNum],
         },
         money: 0,
@@ -721,24 +721,55 @@ app.get("/leaderboard", async (req, res) => {
   res.send(leaderboard);
 });
 
-app.get("/selected_char", async (req, res) => {
-  let selected_char = await client
+app.patch("/change_selected_char", async (req, res) => {
+  let player = await client
     .db("Assignment")
     .collection("players")
-    .findOne({ name: req.body.name });
+    .findOne({
+      $and: [{ name: req.body.name }, { email: req.body.email }],
+    });
+  if (!player) {
+    return res.status(404).send("Player not found");
+  }
+  let index = player.collection.characterList.indexOf(
+    req.body.character_selected
+  );
+  if (index === -1) {
+    return res.status(400).send("Character not found in character list");
+  }
+  if (!Array.isArray(player.collection.charId)) {
+    return res.status(400).send("Character ID list not found");
+  }
+  const char_id = player.collection.charId[index];
 
-  res.send(selected_char.collection.character_selected);
-});
+  let read_id = await client
+    .db("Assignment")
+    .collection("characters_of_players")
+    .findOne({ char_id: char_id });
+  if (!read_id) {
+    return res.status(404).send("Character not found");
+  }
 
-app.patch("/change_selected_char", async (req, res) => {
   let selected_char = await client
     .db("Assignment")
     .collection("players")
     .updateOne(
       { name: req.body.name },
-      { $set: { character_selected: req.body.character_selected } }
-    )
-    .toArray();
+      {
+        $set: {
+          "collection.character_selected.name": req.body.character_selected,
+          "collection.character_selected.charId": char_id,
+        },
+      }
+    );
+  if (selected_char.modifiedCount === 0) {
+    return res.status(400).send("Failed to change selected character");
+  } else {
+    res.send(
+      "Your selected character has been changed to " +
+        req.body.character_selected
+    );
+  }
 });
 
 //This api useless
