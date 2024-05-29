@@ -25,6 +25,10 @@ app.post("/register", async (req, res) => {
       .db("Assignment")
       .collection("players")
       .countDocuments();
+    let countNum = await client
+      .db("Assignment")
+      .collection("characters_of_players")
+      .countDocuments();
     let resq = await client
       .db("Assignment")
       .collection("players")
@@ -38,7 +42,7 @@ app.post("/register", async (req, res) => {
         collection: {
           characterList: ["Lillia"],
           character_selected: "Lillia",
-          charId: ["0"],
+          charId: [countNum],
         },
         money: 0,
         points: 0,
@@ -47,14 +51,30 @@ app.post("/register", async (req, res) => {
         //can do relationship??
         starterPackTaken: false,
       });
-    let countNum = await client
+    let Lilla = await client
       .db("Assignment")
-      .collection("characters_of_players")
-      .countDocuments();
+      .collection("characters")
+      .aggregate([
+        {
+          $match: { name: "Lillia" },
+        },
+        {
+          $project: {
+            _id: 0,
+            name: 1,
+            health: 1,
+            attack: 1,
+            speed: 1,
+            type: 1,
+          },
+        },
+      ])
+      .toArray();
+    console.log(Lilla);
     await client
       .db("Assignment")
       .collection("characters_of_players")
-      .insertOne({ char_id: countNum, name_characters: "Lillia" });
+      .insertOne({ char_id: countNum, characters: Lilla }, { upsert: true });
 
     res.send({
       message:
@@ -523,41 +543,66 @@ app.patch("/buying_chest", async (req, res) => {
       "Not enough money to buy chest. Please compete more battles to earn more money"
     );
   }
+
   if (chest) {
     if (
       player.collection.characterList.includes(
         character_in_chest[0].characters[0].name
       )
     ) {
-      let powerUp = await client
+      let index = player.collection.characterList.indexOf(
+        character_in_chest[0].characters[0].name
+      );
+      console.log(index);
+      let your_char = await client
         .db("Assignment")
-        .collection("players")
-        .updateOne(
+        .collection("characters_of_players")
+        .findOneAndUpdate(
           {
-            $and: [
-              { name: req.body.name },
-              { email: req.body.email },
-              {
-                "collection.characterList": {
-                  $elemMatch: {
-                    name: character_in_chest[0].characters[0].name,
-                  },
-                },
-              },
-            ],
+            char_id: index,
           },
-
           {
             $inc: {
-              "collection.characterList.$.health": 100,
-              "collection.characterList.$.attack": 100,
-              "collection.characterList.$.speed": 0.1,
+              "characters.$[].health": 100,
+              "characters.$[].attack": 100,
+              "characters.$[].speed": 0.1,
             },
           }
         );
+      console.log(your_char);
+
+      // let powerUp = await client
+      //   .db("Assignment")
+      //   .collection("players")
+      //   .updateOne(
+      //     {
+      //       $and: [
+      //         { name: req.body.name },
+      //         { email: req.body.email },
+      //         {
+      //           "collection.characterList": {
+      //             $elemMatch: {
+      //               name: character_in_chest[0].characters[0].name,
+      //             },
+      //           },
+      //         },
+      //       ],
+      //     },
+
+      //     {
+      //       $inc: {
+      //         "collection.characterList.$.health": 100,
+      //         "collection.characterList.$.attack": 100,
+      //         "collection.characterList.$.speed": 0.1,
+      //       },
+      //     }
+      //   );
+      // console.log(powerUp);
       return res.send(
-        powerUp,
-        "Character already exist in your collection, power up instead"
+        // powerUp,
+        character_in_chest[0].characters[0].name +
+          ` already exist in your collection, power up instead` +
+          your_char
       );
     } else {
       let buying = await client
@@ -588,17 +633,29 @@ app.patch("/buying_chest", async (req, res) => {
           .db("Assignment")
           .collection("characters_of_players")
           .countDocuments();
+        let randomChar = await client
+          .db("Assignment")
+          .collection("characters")
+          .aggregate([
+            {
+              $match: { name: character_in_chest[0].characters[0].name },
+            },
+            {
+              $project: {
+                _id: 0,
+                name: 1,
+                health: 1,
+                attack: 1,
+                speed: 1,
+                type: 1,
+              },
+            },
+          ])
+          .toArray();
         await client
           .db("Assignment")
           .collection("characters_of_players")
-          .insertOne(
-            { char_id: countNum },
-            {
-              $push: {
-                players_characters: character_in_chest[0].characters[0].name,
-              },
-            } //can delete?
-          );
+          .insertOne({ char_id: countNum, characters: randomChar });
         await client
           .db("Assignment")
           .collection("players")
@@ -662,6 +719,26 @@ app.get("/leaderboard", async (req, res) => {
       );
   }
   res.send(leaderboard);
+});
+
+app.get("/selected_char", async (req, res) => {
+  let selected_char = await client
+    .db("Assignment")
+    .collection("players")
+    .findOne({ name: req.body.name });
+
+  res.send(selected_char.collection.character_selected);
+});
+
+app.patch("/change_selected_char", async (req, res) => {
+  let selected_char = await client
+    .db("Assignment")
+    .collection("players")
+    .updateOne(
+      { name: req.body.name },
+      { $set: { character_selected: req.body.character_selected } }
+    )
+    .toArray();
 });
 
 //This api useless
@@ -772,7 +849,7 @@ app.patch("/battle", async (req, res) => {
     await client
       .db("Assignment")
       .collection("players")
-      .updateOne({ name: winner }, { $inc: { points: 1 } });
+      .updateOne({ name: winner }, { $inc: { points: 3 } });
 
     if (newHealthAttacker <= 0) {
       res.send(`Nice try, you will be better next time!`);
