@@ -759,6 +759,11 @@ app.patch("/battle", async (req, res) => {
         },
       ],
     });
+  if (!user) {
+    return res.status(404).send("Player not found");
+  } else if (user.collection.character_selected === null) {
+    return res.status(400).send("Character not selected");
+  }
   let attacker = await client
     .db("Assignment")
     .collection("players")
@@ -869,6 +874,7 @@ app.patch("/battle", async (req, res) => {
         { upsert: true }
       );
 
+    // First, decrease the points
     await client
       .db("Assignment")
       .collection("players")
@@ -876,11 +882,21 @@ app.patch("/battle", async (req, res) => {
         { name: loser },
         {
           $inc: { points: -1 },
-          $max: { points: 0 },
           $set: { notification: "Congratulation" },
           $push: { notifications: "You are being attacked in the game!" },
         },
         { upsert: true }
+      );
+
+    // Then, ensure that points are not less than 0
+    await client
+      .db("Assignment")
+      .collection("players")
+      .updateOne(
+        { name: loser, points: { $lt: 0 } },
+        {
+          $set: { points: 0 },
+        }
       );
 
     let playerRecord = await client
@@ -888,7 +904,11 @@ app.patch("/battle", async (req, res) => {
       .collection("players")
       .findOne({ name: winner });
 
-    if (!playerRecord.achievements.includes("First win")) {
+    if (
+      playerRecord &&
+      playerRecord.achievements &&
+      !playerRecord.achievements.includes("First win")
+    ) {
       await client
         .db("Assignment")
         .collection("players")
@@ -910,7 +930,7 @@ app.patch("/battle", async (req, res) => {
     }
     res.send("Battle completed");
   } else {
-    res.status(400).send("Battle failed");
+    res.send("Battle failed");
   }
 });
 
@@ -931,7 +951,7 @@ app.get("/achievements/:player_id", async (req, res) => {
 app.get("/history/:player_id", async (req, res) => {
   let history = client
     .db("Assignment")
-    .collection("battle_history")
+    .collection("battle_record")
     .find({
       $and: [
         { player_id: req.params.player_id },
@@ -942,7 +962,6 @@ app.get("/history/:player_id", async (req, res) => {
   if (!history) {
     return res.status(404).send("No history found for this player");
   }
-
   res.send(history);
 });
 
