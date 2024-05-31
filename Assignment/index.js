@@ -17,7 +17,7 @@ app.post("/register", async (req, res) => {
   ) {
     return res
       .status(400)
-      .send("name,email,password and gender are required.\n(ू˃̣̣̣̣̣̣︿˂̣̣̣̣̣̣ ू)");
+      .send("name,email,password and gender are required.\n 안돼!!!(ू˃̣̣̣̣̣̣︿˂̣̣̣̣̣̣ ू)");
   }
   let existing =
     (await client.db("Assignment").collection("players").findOne({
@@ -94,7 +94,7 @@ app.post("/register", async (req, res) => {
 
 app.patch("/login", async (req, res) => {
   if (!req.body.name || !req.body.email) {
-    return res.status(400).send("Invalid request body");
+    return res.status(400).send("name and email are required. ( ˘ ³˘)❤");
   }
   let resp = await client
     .db("Assignment")
@@ -107,7 +107,7 @@ app.patch("/login", async (req, res) => {
         })),
     });
   if (!resp) {
-    res.send("User not found");
+    res.send("User not found ⸨◺_◿⸩");
   } else {
     // Check if password is provided
     if (resp.password) {
@@ -116,17 +116,17 @@ app.patch("/login", async (req, res) => {
           "Login successful. Remember to gain your starter pack!\n(っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )"
         );
       } else {
-        res.send("Wrong Password");
+        res.send("Wrong Password ⸨◺_◿⸩");
       }
     } else {
-      res.send("Password not provided");
+      res.send("Password not provided ⸨◺_◿⸩");
     }
   }
 });
 
 app.patch("/login/starterpack", async (req, res) => {
   if (!req.body.name) {
-    return res.status(400).send("Invalid request body");
+    return res.status(400).send("name is required.☜(`o´)");
   }
   const min = 1000;
   const max = 2000;
@@ -147,10 +147,10 @@ app.patch("/login/starterpack", async (req, res) => {
       { returnOriginal: false }
     );
   if (user === null) {
-    res.status(400).send("Starter pack already taken");
+    res.status(400).send("Starter pack already taken (╯°□°）╯");
   } else {
     res.send(
-      `Total amount of RM ${newMoneyAmount} is given to player ${req.body.name}`
+      `Total amount of RM ${newMoneyAmount} is given to player ${req.body.name}🤑🤑🤑 `
     );
   }
 });
@@ -163,16 +163,20 @@ app.post("/chests", async (req, res) => {
     !req.body.characters ||
     !req.body.Max_power_level
   ) {
-    return res.status(400).send("Invalid request body");
+    return res
+      .status(400)
+      .send(
+        "chest,price,characters and Max_power_level are required.\n -`д´- "
+      );
   }
   let existing = await client.db("Assignment").collection("chests").findOne({
     chest: req.body.chest,
   });
   if (existing) {
-    res.status(400).send("Chest already exist");
+    res.status(400).send("Chest already exist ಠ_ಠ");
   } else {
     if (req.body.characters.includes(req.body.character)) {
-      return res.status(400).send("Character already in characters array");
+      return res.status(400).send("Character already in characters array ಠ_ಠ");
     }
     let chest = await client.db("Assignment").collection("chests").insertOne({
       chest: req.body.chest,
@@ -192,7 +196,11 @@ app.post("/character", async (req, res) => {
     !req.body.type ||
     !req.body.speed
   ) {
-    return res.status(400).send("Invalid request body");
+    return res
+      .status(400)
+      .send(
+        "character_name,health,attack,type and speed are required.\n ໒( ⇀ ‸ ↼ )७)"
+      );
   }
   let existing = await client
     .db("Assignment")
@@ -201,7 +209,7 @@ app.post("/character", async (req, res) => {
       name: req.body.character_name,
     });
   if (existing) {
-    res.status(400).send("Character already exist");
+    res.status(400).send("Character already exist (╬≖_≖)");
   } else {
     let character = await client
       .db("Assignment")
@@ -289,17 +297,19 @@ app.get("/read/:player_id", async (req, res) => {
 //need Developer token
 app.patch("/add_character_to_chest", async (req, res) => {
   if (!req.body.chest || !req.body.character_name) {
-    return res.status(400).send("Invalid request body");
+    return res
+      .status(400)
+      .send("chest and character_name are required. \n٩(๑ `н´๑)۶");
   }
   let result2 = await client
     .db("Assignment")
     .collection("chests")
     .findOne({ chest: req.body.chest });
   if (!result2) {
-    return res.status(404).send("Chest not found");
+    return res.status(404).send("Chest not found|･ω･｀)");
   }
   if (result2.characters.includes(req.body.character_name)) {
-    return res.status(400).send("Character already exist in the chest");
+    return res.status(400).send("Character already exist in the chest |･ω･)ﾉ");
   }
   const result = await client
     .db("Assignment")
@@ -308,7 +318,7 @@ app.patch("/add_character_to_chest", async (req, res) => {
       { chest: req.body.chest },
       { $addToSet: { characters: req.body.character_name } }
     );
-  res.send("Character added successfully");
+  res.send("Character added successfully ૮ ºﻌºა");
 });
 
 //need Developer token
@@ -330,7 +340,7 @@ app.patch("/characterupdate/:charactername", async (req, res) => {
       name: req.params.charactername,
     });
   if (!existing) {
-    res.status(400).send("Character does not exist");
+    res.status(400).send("Character does not exist (´つヮ⊂)");
   } else {
     let character = await client
       .db("Assignment")
@@ -361,7 +371,9 @@ app.post("/send_friend_request", async (req, res) => {
   }
   // Check if requesterId and requestedId are different
   if (parseInt(req.body.requesterId) === parseInt(req.body.requestedId)) {
-    return res.status(400).send("You cannot send a friend request to yourself");
+    return res
+      .status(400)
+      .send("You cannot send a friend request to yourself\n໒( ̿❍ ᴥ ̿❍)u");
   }
   // Check if both players exist
   const requester = await client
@@ -375,10 +387,12 @@ app.post("/send_friend_request", async (req, res) => {
     .findOne({ player_id: parseInt(req.body.requestedId) });
 
   if (!requester || !requested) {
-    return res.status(404).send("Either players not found");
+    return res.status(404).send("Either players not found ૮ ⚆ﻌ⚆ა?");
   }
   if (requester.friends.friendList.includes(requested.player_id)) {
-    return res.status(404).send("The player is already in your friend list");
+    return res
+      .status(404)
+      .send("The player is already in your friend list ૮ ⚆ﻌ⚆ა?");
   }
   // Check if friend request has already been sent
   if (
@@ -412,14 +426,16 @@ app.post("/send_friend_request", async (req, res) => {
   if (sent.modifiedCount === 0 && sent2.modifiedCount === 0) {
     res.status(400).send("Failed to send friend request");
   } else {
-    res.send("Friend request sent");
+    res.send("Friend request sent! \n(っ◔◡◔)っ ♥ ᶠᵉᵉᵈ ᵐᵉ /ᐠ-ⱉ-ᐟﾉ");
   }
 });
 
 // To  accept a friend request
 app.patch("/accept_friend_request", async (req, res) => {
   if (!req.body.accepterId || !req.body.requesterId) {
-    return res.status(400).send("accepterId and requesterId are required");
+    return res
+      .status(400)
+      .send("accepterId and requesterId are required ㅇㅅㅇ");
   }
   if (parseInt(req.body.accepterId) === parseInt(req.body.requesterId)) {
     return res
@@ -438,7 +454,7 @@ app.patch("/accept_friend_request", async (req, res) => {
     .findOne({ player_id: parseInt(req.body.accepterId) });
 
   if (!requester || !accepter) {
-    return res.status(404).send("Either players not found");
+    return res.status(404).send("Either players not found (=ↀωↀ=)");
   }
   // Move the friend request from needAcceptRequests to friends
   const accept = await client
@@ -472,16 +488,16 @@ app.patch("/accept_friend_request", async (req, res) => {
     );
   console.log(accept2);
   if (accept.modifiedCount === 0 && accept2.modifiedCount === 0) {
-    res.status(400).send("Failed to accept friend request");
+    res.status(400).send("Failed to accept friend request (=ↀωↀ=)");
   } else {
-    res.send("Friend request accepted");
+    res.send("Friend request accepted (ﾐⓛᆽⓛﾐ)✧");
     if (player.friends.friendList.length > 5) {
       await client
         .db("Assignment")
         .collection("players")
         .updateOne(
           { player_id: parseInt(req.body.accepterId) },
-          { $addToSet: { achievements: "Makes more friends" } }
+          { $addToSet: { achievements: "Makes more friends (=✪ᆽ✪=)" } }
         );
     }
   }
@@ -504,7 +520,7 @@ app.patch("/remove_friend/:requesterId/:friendId", async (req, res) => {
     .findOne({ player_id: parseInt(req.params.friendId) });
 
   if (!requester || !friend) {
-    return res.status(404).send("Either players not found");
+    return res.status(404).send("Either players not found (˃̣̣̥⌓˂̣̣̥ )");
   }
   // Remove the friend from the friendList of the requester
   const remove1 = await client
@@ -523,9 +539,9 @@ app.patch("/remove_friend/:requesterId/:friendId", async (req, res) => {
       { $pull: { "friends.friendList": parseInt(req.params.requesterId) } }
     );
   if (remove1.modifiedCount === 0 && remove2.modifiedCount === 0) {
-    res.status(400).send("Failed to remove friend");
+    res.status(400).send("Failed to remove friend ╥__╥");
   } else {
-    res.send("Friend removed");
+    res.send("Friend removed ‧º·(˚ ˃̣̣̥⌓˂̣̣̥ )‧º·");
   }
 });
 
@@ -536,7 +552,9 @@ app.patch("/update/:object_id", async (req, res) => {
     !req.body.password ||
     !req.body.gender
   ) {
-    return res.status(400).send("Invalid request body");
+    return res
+      .status(400)
+      .send("name,email,password and gender are required.\n( ˘▽˘)っ♨");
   }
   let require = await client
     .db("Assignment")
@@ -555,9 +573,9 @@ app.patch("/update/:object_id", async (req, res) => {
       }
     );
   if (require.modifiedCount === 0) {
-    res.status(400).send("Updated failed");
+    res.status(400).send("Updated failed (˃̣̣̥⌓˂̣̣̥ )");
   } else {
-    res.send("Profile updated successfully");
+    res.send("Profile updated successfully 🍲_(ﾟ◇ﾟ；)ノﾞ");
   }
 });
 
@@ -583,7 +601,9 @@ app.get("/chests", async (req, res) => {
 
 app.patch("/buying_chest", async (req, res) => {
   if (!req.body.name || !req.body.email || !req.body.chest) {
-    return res.status(400).send("Invalid request body");
+    return res
+      .status(400)
+      .send("name,email and chest are required. ( ･ิ⌣･ิ)📦(‘∀’●)♡");
   }
   let player = await client
     .db("Assignment")
@@ -619,12 +639,12 @@ app.patch("/buying_chest", async (req, res) => {
   console.log(chest);
 
   if (!player) {
-    return res.status(400).send("User or email are wrong");
+    return res.status(400).send("User or email are wrong ༼☯﹏☯༽");
   }
   // Check if the player has enough money
   if (player.money < chest.price) {
     return res.send(
-      "Not enough money to buy chest. Please compete more battles to earn more money"
+      "Not enough money to buy chest. Please compete more battles to earn more money.(இ﹏இ`｡)"
     );
   }
 
@@ -657,8 +677,7 @@ app.patch("/buying_chest", async (req, res) => {
       return res.send(
         // powerUp,
         character_in_chest[0].characters[0].name +
-          ` already exist in your collection, power up instead` +
-          your_char
+          ` already exist in your collection, power up instead 💪🏼`
       );
     } else {
       let buying = await client
@@ -683,7 +702,7 @@ app.patch("/buying_chest", async (req, res) => {
         );
       console.log(buying);
       if (buying.modifiedCount === 0) {
-        return res.send("Failed to buy character");
+        return res.send("Failed to buy character (☍﹏⁰)｡");
       } else {
         let countNum = await client
           .db("Assignment")
@@ -735,20 +754,20 @@ app.patch("/buying_chest", async (req, res) => {
               {
                 $addToSet: {
                   achievements:
-                    "Congraturation! You complete the characters collection",
+                    "Congraturation!!!👑You complete all characters collection🏆",
                 },
               }
             );
         }
         return res.send(
-          "Chest bought successfully, you got " +
+          "Chest bought successfully🦍, you got " +
             character_in_chest[0].characters[0].name +
             " in your collection."
         );
       }
     }
   } else {
-    res.send("Chest not found");
+    res.send("Chest not found(T⌓T)");
   }
 });
 
@@ -781,7 +800,9 @@ app.get("/leaderboard", async (req, res) => {
       .collection("players")
       .updateOne(
         { player_id: leaderboard[0].player_id },
-        { $addToSet: { achievements: "You are the Top of King in this Game" } }
+        {
+          $addToSet: { achievements: "You are the Top of King in this Game👑" },
+        }
       );
   }
   res.send(leaderboard);
@@ -789,7 +810,9 @@ app.get("/leaderboard", async (req, res) => {
 
 app.patch("/change_selected_char", async (req, res) => {
   if (!req.body.name || !req.body.email || !req.body.character_selected) {
-    return res.status(400).send("Invalid request body");
+    return res
+      .status(400)
+      .send("name,email and character_selected are required.（◎ー◎；）");
   }
   let player = await client
     .db("Assignment")
@@ -798,16 +821,16 @@ app.patch("/change_selected_char", async (req, res) => {
       $and: [{ name: req.body.name }, { email: req.body.email }],
     });
   if (!player) {
-    return res.status(404).send("Player not found");
+    return res.status(404).send("Player not found 👨🏾‍❤️‍👨🏾");
   }
   let index = player.collection.characterList.indexOf(
     req.body.character_selected
   );
   if (index === -1) {
-    return res.status(400).send("Character not found in character list");
+    return res.status(400).send("Character not found in character list (◔ヘ◔)");
   }
   if (!Array.isArray(player.collection.charId)) {
-    return res.status(400).send("Character ID list not found");
+    return res.status(400).send("Character ID list not found (◔ヘ◔)");
   }
   const char_id = player.collection.charId[index];
 
@@ -816,7 +839,7 @@ app.patch("/change_selected_char", async (req, res) => {
     .collection("characters_of_players")
     .findOne({ char_id: char_id });
   if (!read_id) {
-    return res.status(404).send("Character not found");
+    return res.status(404).send("Character not found (◔ヘ◔)");
   }
 
   let selected_char = await client
@@ -832,18 +855,19 @@ app.patch("/change_selected_char", async (req, res) => {
       }
     );
   if (selected_char.modifiedCount === 0) {
-    return res.status(400).send("Failed to change selected character");
+    return res.status(400).send("Failed to change selected character (◔ヘ◔)");
   } else {
     res.send(
       "Your selected character has been changed to " +
-        req.body.character_selected
+        req.body.character_selected +
+        "🐣"
     );
   }
 });
 
 app.patch("/battle", async (req, res) => {
   if (!req.body.name || !req.body.email) {
-    return res.status(400).send("Invalid request body");
+    return res.status(400).send("name and email are required. ( ˘ ³˘)❤");
   }
 
   const user = await client
@@ -858,9 +882,9 @@ app.patch("/battle", async (req, res) => {
       ],
     });
   if (!user) {
-    return res.status(404).send("Player not found");
+    return res.status(404).send("Player not found ໒( ⊡ _ ⊡ )७");
   } else if (user.collection.character_selected === null) {
-    return res.status(400).send("Character not selected");
+    return res.status(400).send("Character not selected. (◔_◔)🍔🍕");
   }
   let attacker = await client
     .db("Assignment")
@@ -886,7 +910,7 @@ app.patch("/battle", async (req, res) => {
   console.log(attacker[0]);
   console.log(defender[0]);
   if (!attacker[0] || !defender[0]) {
-    return res.status(400).send("Player not found");
+    return res.status(400).send("Player not found (●･̆⍛･̆●)");
   }
   //need to read char of player*******
   const charId_attacker = attacker[0].collection.character_selected.charId;
@@ -933,7 +957,7 @@ app.patch("/battle", async (req, res) => {
     console.log("Attacker health left: ", newHealthDefender);
     console.log("Defender health left: ", newHealthAttacker);
   } else {
-    return res.status(400).send("Character not found");
+    return res.status(400).send("Character not found(●･̆⍛･̆●)");
   }
 
   let winner =
@@ -1033,25 +1057,28 @@ app.patch("/battle", async (req, res) => {
             );
         }
         res.send(
-          `Congratulations, you won the battle after ${battle_round} rounds!`
+          `Congratulations, you won the battle after ${battle_round} rounds!\(≧∇≦)/`
         );
       }
     } else {
-      res.send("Battle failed");
+      res.send("Battle failed 川o･-･)ﾉ");
     }
   }
 });
 
-app.get("/achievements/:player_id", async (req, res) => {
+app.get("/achievements", async (req, res) => {
+  if (!req.body.player_id) {
+    return res.status(400).send("player_id is required. （゜ρ゜)/");
+  }
   let user = await client
     .db("Assignment")
     .collection("players")
     .findOne({
-      player_id: req.params.player_id,
+      player_id: req.body.player_id,
       achievements: { $exists: true },
     });
   if (!user) {
-    res.status(404).send("Find a way to get your achievements!");
+    res.status(404).send("Find a way to get your achievements. (。-ω-)ﾉ");
   }
   res.send(user.achievements);
 });
@@ -1071,21 +1098,13 @@ app.get("/read_battle_record/:player_id", async (req, res) => {
   console.log(history);
 
   if (history.length === 0) {
-    return res.status(404).send("No history found for this player");
+    return res
+      .status(404)
+      .send("No history found for this player (ﾐ〒﹏〒ﾐ)Gambateh!");
   }
 
   res.send(history);
 });
-
-// const rateLimit = require("express-rate-limit");
-
-// // Enable rate limiting
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 100 // limit each IP to 100 requests per windowMs
-// });
-
-// app.use(limiter);
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
