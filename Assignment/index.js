@@ -86,7 +86,7 @@ app.post("/register", async (req, res) => {
     await client
       .db("Assignment")
       .collection("characters_of_players")
-      .insertOne({ char_id: countNum, characters: Lilla }, { upsert: true });
+      .insertOne({ char_id: countNum, characters: Lilla[0] }, { upsert: true });
 
     res.send(
       "Congratulation! Your account register succesfully!\nLog in to start your battle journey! \n( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ )"
@@ -391,41 +391,36 @@ app.get("/readUserProfile/:player_name", verifyToken, async (req, res) => {
             player_id: 1,
             name: 1,
             gender: 1,
+            money: 1,
             collection: 1,
             points: 1,
-            money: 1,
             friends: 1,
             achievments: 1,
             notifications: 1,
           },
         },
-        ,
         {
           $lookup: {
             from: "players",
             localField: "friends.friendList",
             foreignField: "player_id",
-            as: "friendsInfo",
-          },
-        },
-        {
-          $project: {
-            player_id: 1,
-            name: 1,
-            gender: 1,
-            collection: 1,
-            points: 1,
-            achievments: 1,
-            "friendsInfo.player_id": 1,
-            "friendsInfo.name": 1,
+            as: "friends.friendList",
           },
         },
         {
           $lookup: {
-            from: "characters",
-            localField: "collection.characterList",
-            foreignField: "name",
-            as: "characterInfo",
+            from: "characters_of_players",
+            localField: "collection.charId",
+            foreignField: "char_id",
+            as: "collection.charId",
+          },
+        },
+        {
+          $lookup: {
+            from: "characters_of_players",
+            localField: "collection.character_selected.charId",
+            foreignField: "char_id",
+            as: "collection.character_selected.charId",
           },
         },
         {
@@ -433,15 +428,27 @@ app.get("/readUserProfile/:player_name", verifyToken, async (req, res) => {
             player_id: 1,
             name: 1,
             gender: 1,
-            "characterInfo.name": 1,
-            "characterInfo.health": 1,
-            "characterInfo.attack": 1,
-            "characterInfo.speed": 1,
-            "characterInfo.type": 1,
+            money: 1,
             points: 1,
+            "collection.characterList": 1,
+            "collection.character_selected.name": 1,
+            "collection.character_selected.charId.char_id": 1,
+            "collection.character_selected.charId.characters": 1,
+            "collection.charId.char_id": 1,
+            "collection.charId.characters": 1,
+            "friends.friendList.player_id": 1,
+            "friends.friendList.points": 1,
+            "friends.friendList.name": 1,
+            "friends.friendList.gender": 1,
+            "friends.sentRequests": 1,
+            "friends.needAcceptRequests": 1,
             achievments: 1,
-            "friendsInfo.player_id": 1,
-            "friendsInfo.name": 1,
+            notifications: 1,
+          },
+        },
+        {
+          $project: {
+            "collection.charId._id": 0,
           },
         },
       ])
@@ -451,7 +458,6 @@ app.get("/readUserProfile/:player_name", verifyToken, async (req, res) => {
     return res.status(401).send("You are not authorised to read this player");
   }
 });
-
 //need Developer token
 app.patch("/add_character_to_chest", verifyToken, async (req, res) => {
   if (req.identify.roles == "admin") {
@@ -1291,27 +1297,33 @@ app.patch("/battle", verifyToken, async (req, res) => {
     let battle_round = 0;
     let newHealthDefender;
     let newHealthAttacker;
-
-    if (attacker_character && defender_character) {
+    console.log(attacker_character.characters);
+    console.log(defender_character.characters);
+    if (
+      attacker_character &&
+      attacker_character.characters &&
+      defender_character &&
+      defender_character.characters
+    ) {
       do {
         newHealthDefender =
-          defender_character.characters[0].health -
-          attacker_character.characters[0].attack *
-            attacker_character.characters[0].speed;
+          defender_character.characters.health -
+          attacker_character.characters.attack *
+            attacker_character.characters.speed;
 
         newHealthAttacker =
-          attacker_character.characters[0].health -
-          defender_character.characters[0].attack *
-            defender_character.characters[0].speed;
+          attacker_character.characters.health -
+          defender_character.characters.attack *
+            defender_character.characters.speed;
 
         // Update the characters' health
-        defender_character.characters[0].health = newHealthDefender;
-        attacker_character.characters[0].health = newHealthAttacker;
+        defender_character.characters.health = newHealthDefender;
+        attacker_character.characters.health = newHealthAttacker;
 
         battle_round++;
       } while (
-        defender_character.characters[0].health > 0 &&
-        attacker_character.characters[0].health > 0
+        defender_character.characters.health > 0 &&
+        attacker_character.characters.health > 0
       );
 
       console.log(`Battle round: ${battle_round}`);
