@@ -6,6 +6,23 @@ const jwt = require("jsonwebtoken");
 
 app.use(express.json());
 
+app.post("/register", verifyToken, (req, res) => {
+  if (req.user.role == "admin") {
+    const username = req.body.username;
+    const password = req.body.password;
+    user = db.collection("users").find({ username: username });
+    if (user) {
+      res.send("User already exists");
+    } else {
+      const hash = bcrypt.hashSync(password, 10);
+      db.collection("users").insertOne({ username: username, password: hash });
+      res.send("User created");
+    }
+  } else {
+    res.send("Unauthorized");
+  }
+});
+
 //new user registration
 app.post("/reg", async (req, res) => {
   const hash = bcrypt.hashSync(req.body.password, 10);
