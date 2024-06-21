@@ -10,23 +10,24 @@ app.use(express.static("public"));
 //API FOR ADMIN
 //login for admin
 app.post("/adminLogin", async (req, res) => {
+  // Check if all required fields are provided
   if (!req.body.name || !req.body.email) {
     return res.status(400).send("name and email are required. ( ˘ ³˘)❤");
   }
-
+  // Check if the admin already exists
   let resp = await client
     .db("Assignment")
     .collection("players")
     .findOne({
       $and: [{ name: req.body.name }, { email: req.body.email }],
     });
-
   if (!resp) {
     res.send("Admin not found ⸨◺_◿⸩");
   } else {
-    // Check if password is provided
+    // Check if password is true
     if (resp.password) {
       if (bcrypt.compareSync(req.body.password, resp.password)) {
+        //if the password is correct, send the token and message
         const token = jwt.sign(
           {
             id: resp._id,
@@ -38,11 +39,10 @@ app.post("/adminLogin", async (req, res) => {
           { expiresIn: "1h" }
         );
         console.log(token);
-        //if the password is correct, send the message
         res.status(200).send({
           message:
             "Admin login successful. Do yer thang in the admin panel!!\n(っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )",
-          token: token, //send the token
+          token: token,
         });
       } else {
         //if the password is wrong, send the message
@@ -55,11 +55,11 @@ app.post("/adminLogin", async (req, res) => {
   }
 });
 
-//Add chest
+//Add a new chest
 app.post("/chests", verifyToken, async (req, res) => {
-  // Check if all required fields are provided
-  // Check if the user is authorised to create a chest
+  //Check if the user is an admin
   if (req.identify.roles == "admin") {
+    // Check if chest,price,characters and Max_power_level fields are provided
     if (
       !req.body.chest ||
       !req.body.price ||
@@ -87,6 +87,7 @@ app.post("/chests", verifyToken, async (req, res) => {
           .status(400)
           .send("Character already in characters array ಠ_ಠ");
       }
+      //if the chest does not exist, create the chest
       let chest = await client.db("Assignment").collection("chests").insertOne({
         chest: req.body.chest,
         price: req.body.price,
@@ -101,7 +102,7 @@ app.post("/chests", verifyToken, async (req, res) => {
   }
 });
 
-//Add character
+//Add a new character
 app.post("/character", verifyToken, async (req, res) => {
   // Check if the user is authorised to create a character
   if (req.identify.roles != "admin") {
@@ -148,7 +149,7 @@ app.post("/character", verifyToken, async (req, res) => {
   }
 });
 
-//Update character
+//Update a character
 app.patch("/characterupdate/:charactername", verifyToken, async (req, res) => {
   //Check if the user is an admin
   if (req.identify.roles == "admin") {
@@ -163,6 +164,7 @@ app.patch("/characterupdate/:charactername", verifyToken, async (req, res) => {
         .status(400)
         .send("health,attack,speed and type are required.（＞д＜）");
     }
+    //Check if the character exists
     let existing = await client
       .db("Assignment")
       .collection("characters")
@@ -193,6 +195,7 @@ app.patch("/characterupdate/:charactername", verifyToken, async (req, res) => {
       res.send(character);
     }
   } else {
+    //if the user is not authorised, send the message
     res.status(403).send("You are not authorised to update this character");
   }
 });
@@ -257,10 +260,11 @@ app.patch("/delete_character", verifyToken, async (req, res) => {
     await client.db("Assignment").collection("characters").deleteOne({
       name: req.body.char_name,
     });
+    //check if the character is in the chest
     let char_chest = await client.db("Assignment").collection("chests").find({
       chest: req.body.chest,
     });
-    //check if the character is in the chest
+    //If the character is in the chest, delete it
     if (char_chest) {
       await client
         .db("Assignment")
@@ -277,6 +281,7 @@ app.patch("/delete_character", verifyToken, async (req, res) => {
         );
       res.send("Character deleted successfully ( ˘ ³˘)❤");
     } else {
+      //If the character is not in the chest, return an error
       res.status(400).send("Character in chest not found ( ˘︹˘ )");
     }
   } else {
@@ -307,9 +312,11 @@ app.delete("/deleteChest/:chestName", verifyToken, async (req, res) => {
       console.log(delete_req);
       res.status(200).send("Chest deleted successfully q(≧▽≦q)");
     } else {
+      //If the chest does not exist, return an error
       res.status(400).send("Chest not found ( ˘︹˘ )");
     }
   } else {
+    //If the user is not an admin, return an error
     res.status(403).send("You are not authorised to delete this chest");
   }
 });
@@ -331,6 +338,7 @@ app.delete(
       console.log(delete_req);
       res.status(200).send("Battle record deleted successfully ( ˘︹˘ )");
     } else {
+      //If the user is not an admin, return an error
       res
         .status(403)
         .send("You are not authorised to delete the battle record");
@@ -341,7 +349,7 @@ app.delete(
 //API FOR USERS
 //Registration account for users
 app.post("/register", async (req, res) => {
-  // Check if all required fields are provided
+  // Check if name, email and password and fields are provided
   if (
     !req.body.name ||
     !req.body.email ||
@@ -360,7 +368,7 @@ app.post("/register", async (req, res) => {
     (await client.db("Assignment").collection("players").findOne({
       email: req.body.email,
     }));
-  //if the username or email already exist, send the message
+  //if the username or email already exists, return an error
   if (existing) {
     res.status(400).send("username or email already exist");
   } else {
@@ -375,15 +383,14 @@ app.post("/register", async (req, res) => {
       .limit(1)
       .toArray();
     const highestId = highestIdPlayer[0] ? highestIdPlayer[0].player_id : 0;
-
     // Increment the highest player_id by 1
     const nextId = highestId + 1;
-
     let countNum = await client
       .db("Assignment")
       .collection("characters_of_players")
       .countDocuments();
-    let resq = await client //insert the data into the database
+    //insert the data into the database
+    let resq = await client
       .db("Assignment")
       .collection("players")
       .insertOne({
@@ -426,11 +433,11 @@ app.post("/register", async (req, res) => {
       ])
       .toArray();
     console.log(Lilla[0]);
-    await client //insert the character Lillia into the database
+    //add the character Lillia to the character of the player collection
+    await client
       .db("Assignment")
       .collection("characters_of_players")
       .insertOne({ char_id: countNum, characters: Lilla[0] }, { upsert: true });
-
     res.send(
       "Congratulation! Your account register succesfully!\nLog in to start your battle journey! \n( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ )"
     );
@@ -439,10 +446,12 @@ app.post("/register", async (req, res) => {
 
 //login for users
 app.post("/userLogin", async (req, res) => {
+  // Check if name and email fields are provided
   if (!req.body.name || !req.body.email) {
+    //if not provided, return an error
     return res.status(400).send("name and email are required. ( ˘ ³˘)❤");
   }
-
+  //Check if the user is the player with the name and email
   let resp = await client
     .db("Assignment")
     .collection("players")
@@ -455,6 +464,7 @@ app.post("/userLogin", async (req, res) => {
     // Check if password is provided
     if (resp.password) {
       if (bcrypt.compareSync(req.body.password, resp.password)) {
+        //if the password is correct, send the token and message
         const token = jwt.sign(
           {
             id: resp._id,
@@ -467,16 +477,17 @@ app.post("/userLogin", async (req, res) => {
           { expiresIn: "1h" }
         );
         console.log(token);
-        //if the password is correct, send the message
         res.status(200).send({
           message:
             "Login successful. Remember to gain your starter pack!\n(っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )",
           token: token,
         });
       } else {
+        //if the password is incorrect, return an error
         res.send("Wrong Password ⸨◺_◿⸩");
       }
     } else {
+      //if the password is not provided, return an error
       res.send("Password not provided ⸨◺_◿⸩");
     }
   }
@@ -490,10 +501,12 @@ app.patch("/login/starterpack", verifyToken, async (req, res) => {
   }
   // Check if the user is authorised to take the starter pack
   if (req.identify.roles == "player" && req.identify.name == req.body.name) {
+    //set the range of money taken
     const min = 1000; //minimum amount of money
     const max = 2000; //maximum amount of money
     //randomly genarate amount of money
     const newMoneyAmount = Math.floor(Math.random() * (max - min + 1)) + min;
+    //update the money and starter pack taken of the user
     let user = await client
       .db("Assignment")
       .collection("players")
@@ -506,11 +519,11 @@ app.patch("/login/starterpack", verifyToken, async (req, res) => {
             { starterPackTaken: { $eq: false } }, //check if the starter pack is taken
           ],
         },
-        //update the money and starter pack taken
         { $set: { starterPackTaken: true, money: newMoneyAmount } },
         { returnOriginal: false }
       );
     if (user === null) {
+      //if the starter pack is already taken, return an error
       res.status(400).send("Starter pack already taken (╯°□°）╯");
     } else {
       //if the starter pack is not taken, send the message
@@ -519,7 +532,7 @@ app.patch("/login/starterpack", verifyToken, async (req, res) => {
       );
     }
   } else {
-    //if the user is not authorised, send the message
+    //if the user is not player, send the message
     return res
       .status(401)
       .send("You are not authorised to take the starter pack");
@@ -640,15 +653,14 @@ app.post("/send_friend_request", verifyToken, async (req, res) => {
       .db("Assignment")
       .collection("players")
       .findOne({ player_id: parseInt(req.body.requesterId) });
-
     const requested = await client
       .db("Assignment")
       .collection("players")
       .findOne({ player_id: parseInt(req.body.requestedId) });
-
     if (!requester || !requested) {
       return res.status(404).send("Either players not found ૮ ⚆ﻌ⚆ა?");
     }
+    // Check if requested already in friendList
     if (requester.friends.friendList.includes(requested.player_id)) {
       return res
         .status(404)
@@ -664,7 +676,7 @@ app.post("/send_friend_request", verifyToken, async (req, res) => {
     ) {
       return res.status(400).send("Friend request already sent");
     }
-    // Send the friend request
+    // Send the friend request and update status for both players
     const sent = await client
       .db("Assignment")
       .collection("players")
@@ -683,13 +695,16 @@ app.post("/send_friend_request", verifyToken, async (req, res) => {
           },
         }
       );
-    //check if update process of requeaster and requeasted are successful
+    //check if update processes of requeaster and requeasted are successful
     if (sent.modifiedCount === 0 && sent2.modifiedCount === 0) {
+      //If not successful, return an error
       res.status(400).send("Failed to send friend request");
     } else {
+      //If successful, return a success message
       res.send("Friend request sent! \n(っ◔◡◔)っ ♥ ᶠᵉᵉᵈ ᵐᵉ /ᐠ-ⱉ-ᐟﾉ");
     }
   } else {
+    //If the user is not player, return an error
     return res
       .status(401)
       .send("You are not authorised to send this friend request");
@@ -720,12 +735,10 @@ app.patch("/accept_friend_request", verifyToken, async (req, res) => {
       .db("Assignment")
       .collection("players")
       .findOne({ player_id: parseInt(req.body.requesterId) });
-
     const accepter = await client
       .db("Assignment")
       .collection("players")
       .findOne({ player_id: parseInt(req.body.accepterId) });
-
     if (!requester || !accepter) {
       return res.status(404).send("Either players not found (=ↀωↀ=)");
     }
@@ -760,10 +773,12 @@ app.patch("/accept_friend_request", verifyToken, async (req, res) => {
         }
       );
     console.log(accept2);
-    //Check if update process of accepter and accepter are insuccessful
+    //Check if update process of accepter and accepter are successful
     if (accept.modifiedCount === 0 && accept2.modifiedCount === 0) {
+      //If not successful, return an error
       res.status(400).send("Failed to accept friend request (=ↀωↀ=)");
     } else {
+      //If successful, return a success message
       console.log(accepter.friends.friendList.length);
       res.send("Friend request accepted (ﾐⓛᆽⓛﾐ)✧");
       //Check if accepter has more than 5 friends and update the achievements
@@ -778,6 +793,7 @@ app.patch("/accept_friend_request", verifyToken, async (req, res) => {
       }
     }
   } else {
+    //If the user is not authorised to accept a friend request, return an error
     return res
       .status(401)
       .send("You are not authorised to accept this friend request");
@@ -803,12 +819,10 @@ app.patch(
         .db("Assignment")
         .collection("players")
         .findOne({ player_id: parseInt(req.params.requesterId) });
-
       const friend = await client
         .db("Assignment")
         .collection("players")
         .findOne({ player_id: parseInt(req.params.friendId) });
-
       if (!requester || !friend) {
         return res.status(404).send("Either players not found (˃̣̣̥⌓˂̣̣̥ )");
       }
@@ -828,12 +842,16 @@ app.patch(
           { player_id: parseInt(req.params.friendId) },
           { $pull: { "friends.friendList": parseInt(req.params.requesterId) } }
         );
+      //Check if update process of requester and friend are successful
       if (remove1.modifiedCount === 0 && remove2.modifiedCount === 0) {
+        //If not successful, return an error
         res.status(400).send("Failed to remove friend ╥__╥");
       } else {
+        //If successful, return a success message
         res.send("Friend removed ‧º·(˚ ˃̣̣̥⌓˂̣̣̥ )‧º·");
       }
     } else {
+      //If the user is not authorised to remove a friend, return an error
       return res
         .status(401)
         .send("You are not authorised to remove this friend");
@@ -892,6 +910,7 @@ app.patch("/update/:name", verifyToken, async (req, res) => {
       });
     }
   } else {
+    //If the user is not an player, return an error
     return res.status(401).send("You are not authorised to update this player");
   }
 });
@@ -905,7 +924,7 @@ app.delete("/delete/:name", verifyToken, async (req, res) => {
       name: req.params.name,
     });
     if (existing) {
-      //Delete the player
+      //If the player exists, delete the user account
       let delete_req = await client
         .db("Assignment")
         .collection("players")
@@ -915,9 +934,11 @@ app.delete("/delete/:name", verifyToken, async (req, res) => {
       res.send(delete_req);
       console.log(req.params);
     } else {
+      //If the player does not exist, return an error
       res.status(400).send("Player not found ( ˘︹˘ )");
     }
   } else {
+    //If the user is not an player, return an error
     return res.status(401).send("You are not authorised to delete this player");
   }
 });
@@ -934,6 +955,7 @@ app.get("/readchests", verifyToken, async (req, res) => {
       .toArray();
     res.send(chests);
   } else {
+    //If the user is not player, return an error
     return res.status(401).send("You are not authorised to view the chests");
   }
 });
@@ -956,9 +978,9 @@ app.patch("/buying_chest", verifyToken, async (req, res) => {
         $and: [{ name: req.body.name }, { email: req.body.email }],
       });
     if (!player) {
+      //If the player does not exist, return an error
       return res.status(400).send("User or email are wrong ༼☯﹏☯༽");
     }
-
     // Randomly select a character from the characters array
     let character_in_chest = await client
       .db("Assignment")
@@ -982,7 +1004,6 @@ app.patch("/buying_chest", verifyToken, async (req, res) => {
     console.log(character_in_chest[0].characters);
     console.log(character_in_chest[0].characters[0].name);
     console.log(chest);
-
     // Check if the player has enough money
     if (player.money < chest.price) {
       return res.send(
@@ -1136,6 +1157,7 @@ app.patch("/buying_chest", verifyToken, async (req, res) => {
       res.send("Chest not found(T⌓T)");
     }
   } else {
+    //If the user is not player, return an error
     return res.status(401).send("You are not authorised to buy a chest");
   }
 });
@@ -1206,6 +1228,7 @@ app.patch("/change_selected_char", verifyToken, async (req, res) => {
       );
     }
   } else {
+    //If the user is not the player, return an error
     return res
       .status(401)
       .send("You are not authorised to change the selected character");
@@ -1426,6 +1449,7 @@ app.patch("/battle", verifyToken, async (req, res) => {
       }
     }
   } else {
+    //If the user is not an player, return an error
     return res.status(401).send("You are not authorised to battle this player");
   }
 });
@@ -1538,6 +1562,7 @@ app.get("/read/:player_name", verifyToken, async (req, res) => {
       .toArray();
     res.send(document);
   } else {
+    //If the user is not authorised (not admin or player) to read the profile, return an error
     return res.status(401).send("You are not authorised to read this player");
   }
 });
@@ -1581,6 +1606,7 @@ app.get("/leaderboard", verifyToken, async (req, res) => {
     }
     res.send(leaderboard);
   } else {
+    //If the user is not authorised (not admin or player) to read the leaderboard, return an error
     return res
       .status(401)
       .send("You are not authorised to view the leaderboard");
