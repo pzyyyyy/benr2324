@@ -1,28 +1,6 @@
 // Example URL of your Azure API endpoint
 const apiUrl = "https://berr2243wsw.azurewebsites.net/api/your-endpoint";
 
-// Example request body
-const data = {
-  key: "value",
-  anotherKey: "anotherValue",
-};
-
-// Example headers (including Content-Type and any authentication token if required)
-const headers = {
-  "Content-Type": "application/json",
-  Authorization: "Bearer YOUR_AUTH_TOKEN", // Only if authentication is needed
-};
-
-// Sending the POST request
-fetch(apiUrl, {
-  method: "POST", // Specify the method
-  headers: headers,
-  body: JSON.stringify(data), // Convert the JavaScript object to a JSON string
-})
-  .then((response) => response.json()) // Parsing the JSON response
-  .then((data) => console.log(data)) // Handling the data from the response
-  .catch((error) => console.error("Error:", error)); // Handling any errors
-
 require("dotenv").config();
 const bcrypt = require("bcrypt");
 const express = require("express");
