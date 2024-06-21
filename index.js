@@ -7,7 +7,6 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static("public"));
-
 //API FOR ADMIN
 //login for admin
 app.post("/adminLogin", async (req, res) => {
@@ -1623,7 +1622,7 @@ app.listen(port, () => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  res.send("FOR BATTLE!!");
 });
 
 //Path:package.json
