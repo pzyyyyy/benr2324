@@ -1,5 +1,5 @@
 // Example URL of your Azure API endpoint
-const apiUrl = "https://your-azure-app.azurewebsites.net/api/your-endpoint";
+const apiUrl = "https://berr2243wsw.azurewebsites.net/api/your-endpoint";
 
 // Example request body
 const data = {
