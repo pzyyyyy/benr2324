@@ -138,7 +138,9 @@ app.post("/buy", async (req, res) => {
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
-app.get("/");
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
 
 //middleware
 function verifyToken(req, res, next) {
