@@ -981,6 +981,10 @@ app.patch("/buying_chest", verifyToken, async (req, res) => {
       //If the player does not exist, return an error
       return res.status(400).send("User or email are wrong ༼☯﹏☯༽");
     }
+    //Read the chest existance
+    let chest = await client.db("Assignment").collection("chests").findOne({
+      chest: req.body.chest,
+    });
     // Randomly select a character from the characters array
     let character_in_chest = await client
       .db("Assignment")
