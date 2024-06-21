@@ -1622,6 +1622,10 @@ app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
 
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
+
 //Path:package.json
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { message } = require("statuses");
