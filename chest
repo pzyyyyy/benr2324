@@ -7,6 +7,7 @@
   "characters":["Darius","Jax","Lee Sin","Lillia","Ornn","Rammus","Sion","Yone"],
   "Max_power_level":{"$numberInt":"4000"}
 },
+
 {
   "_id": {
     "$oid": "6625b89f19a120d17f922951"
@@ -17,6 +18,7 @@
   "characters":["Jax","Sion","Lillia","Yuumi","Yasuo","Yone","Raven","Rammus","Darius","Lee Sin"],
   "Max_power_level":{"$numberInt":"7500"}
 },
+
 {
   "_id": {
     "$oid": "6625b90519a120d17f922952"
@@ -26,6 +28,7 @@
   "characters":["Ornn","Kays","Zed","Warwick","Darius","Jax","Volibear","Yasuo","Raven","Yuumi"],
   "Max_power_level":{"$numberInt":"6224"}
 },
+
 {
   "_id": {
     "$oid": "6625b94519a120d17f922953"
@@ -35,6 +38,7 @@
   "characters":["Kays","Nasus ","Volibear","Warwick","Quaso","Chicko","Zed"],
   "Max_power_level":{"$numberInt":"7581"}
 },
+
 {
   "_id": {
     "$oid": "6625c94019a120d17f922954"

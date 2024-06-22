@@ -147,4 +147,5 @@
 "health":{"$numberInt":"4000"},
 "attack":{"$numberInt":"750"},
 "speed":1.75,
-"type":"Assasin"}]
+"type":"Assasin"}
+]
