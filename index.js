@@ -1,6 +1,3 @@
-// Example URL of your Azure API endpoint
-const apiUrl = "https://berr2243wsw.azurewebsites.net/api/your-endpoint";
-
 require("dotenv").config();
 const bcrypt = require("bcrypt");
 const express = require("express");
