@@ -1620,7 +1620,9 @@ app.get("/leaderboard", verifyToken, async (req, res) => {
   }
 });
 
-app.get("/FOR BATTLE!!");
+app.get("/", (req, res) => {
+  res.send("FOR BATTLE!!");
+});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
