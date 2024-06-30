@@ -1618,7 +1618,7 @@ app.get("/leaderboard", verifyToken, async (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("FOR BATTLE!! GAME (  ´-ω ･)▄︻┻┳══━一");
+  res.send("FOR BATTLE!! GAME ( -ω ･)▄︻┻┳══━一");
 });
 
 app.listen(port, () => {
