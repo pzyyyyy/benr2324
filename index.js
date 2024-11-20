@@ -1619,7 +1619,7 @@ app.get("/leaderboard", verifyToken, async (req, res) => {
 
 app.get("/", (req, res) => {
   res.send(
-    "Well Done!! I done encrypt this messange through TLS!! ( -ω ･)▄︻┻┳══━一"
+    "Well Done!! I done decrypt this messange through TLS!! ( -ω ･)▄︻┻┳══━一"
   );
   //res.send("FOR BATTLE!! GAME ( -ω ･)▄︻┻┳══━一");
 });
