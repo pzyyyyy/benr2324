@@ -2,8 +2,14 @@ require("dotenv").config();
 const bcrypt = require("bcrypt");
 const express = require("express");
 const jwt = require("jsonwebtoken");
+const { Server } = require("socket.io");
+const http = require("http");
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Create HTTP server and pass it to Socket.IO
+const server = http.createServer(app);
+const io = new Server(server);
 
 app.use(express.json());
 app.use(express.static("public"));
@@ -1617,9 +1623,28 @@ app.get("/leaderboard", verifyToken, async (req, res) => {
   }
 });
 
+// Real-time connection handling
+io.on("connection", (socket) => {
+  console.log("A user connected");
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
+
+  // Example: Emit a message to the client
+  socket.emit("message", "Welcome to the real-time server!");
+
+  // Example: Handle a custom event from the client
+  socket.on("customEvent", (data) => {
+    console.log("Received customEvent with data:", data);
+    // Broadcast the data to all connected clients
+    io.emit("update", data);
+  });
+});
+
 app.get("/", (req, res) => {
   res.send(
-    "Well Done!! I done decrypt this messange through TLS!! ( -ω ･)▄︻┻┳══━一"
+    "Well Done!! I done decrypt this message through TLS!! ( -ω ･)▄︻┻┳══━一"
   );
   //res.send("FOR BATTLE!! GAME ( -ω ･)▄︻┻┳══━一");
 });
