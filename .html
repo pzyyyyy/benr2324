@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time Updates</title>
+</head>
+<body>
+  <h1>Real-Time Updates</h1>
+  <p id="message">Waiting for message...</p>
+  <p id="update">Waiting for updates...</p>
+  <button onclick="sendCustomEvent()">Send Custom Event</button>
+
+  <!-- Include the Socket.IO client library -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- Include the client-side script -->
+  <script src="/socket.js"></script>
+</body>
+</html>

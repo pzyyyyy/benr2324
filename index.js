@@ -1644,19 +1644,16 @@ io.on("connection", (socket) => {
 
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/public/index.html");
-  //res.send(
-  //  "Well Done!! I done decrypt this message through TLS!! ( -ω ･)▄︻┻┳══━一"
-  //);
+
+  // res.send(
+  //   "Well Done!! I done decrypt this message through TLS!! ( -ω ･)▄︻┻┳══━一"
+  // );
   //res.send("FOR BATTLE!! GAME ( -ω ･)▄︻┻┳══━一");
 });
 
-server.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
 });
-
-// app.listen(port, () => {
-//   console.log(`Example app listening on port ${port}`);
-// });
 
 //Path:package.json
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
