@@ -3,12 +3,12 @@ const bcrypt = require("bcrypt");
 const express = require("express");
 const jwt = require("jsonwebtoken");
 //const { Server } = require("socket.io");
-const http = require("http");
+//const http = require("http");
 //const app = express();
 const port = process.env.PORT || 3000;
 
 // const WebSocket = require("ws");
-// const wss = new WebSocket.Server({ server });
+//const wss = new WebSocket.Server({ server });
 
 // // Create HTTP server and pass it to Socket.IO
 // const server = http.createServer(app);
@@ -1644,23 +1644,23 @@ app.get("/leaderboard", verifyToken, async (req, res) => {
 });
 
 // Real-time connection handling
-io.on("connection", (socket) => {
-  console.log("A user connected");
+// io.on("connection", (socket) => {
+//   console.log("A user connected");
 
-  socket.on("disconnect", () => {
-    console.log("User disconnected");
-  });
+//   socket.on("disconnect", () => {
+//     console.log("User disconnected");
+//   });
 
-  // Example: Emit a message to the client
-  socket.emit("message", "Welcome to the real-time server!");
+//   // Example: Emit a message to the client
+//   socket.emit("message", "Welcome to the real-time server!");
 
-  // Example: Handle a custom event from the client
-  socket.on("customEvent", (data) => {
-    console.log("Received customEvent with data:", data);
-    // Broadcast the data to all connected clients
-    io.emit("update", data);
-  });
-});
+//   // Example: Handle a custom event from the client
+//   socket.on("customEvent", (data) => {
+//     console.log("Received customEvent with data:", data);
+//     // Broadcast the data to all connected clients
+//     io.emit("update", data);
+//   });
+// });
 
 app.get("/", (req, res) => {
   res.send(
@@ -1675,14 +1675,22 @@ app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
 
-wss.on("connection", function connection(ws) {
-  ws.on("message", function incoming(message) {
-    // Handle incoming messages from the client
-  });
+// wss.on("connection", function connection(ws) {
+//   ws.on("message", function incoming(message) {
+//     // Handle incoming messages from the client
+//   });
 
-  // Send real-time updates to the client
+//   // Send real-time updates to the client
+//   setInterval(() => {
+//     ws.send("Real-time update message");
+//   }, 1000);
+// });
+io.on("connection", (socket) => {
+  console.log("A client connected");
+
+  // Send real-time data to the client
   setInterval(() => {
-    ws.send("Real-time update message");
+    socket.emit("realtimeData", "Real-time update message");
   }, 1000);
 });
 
