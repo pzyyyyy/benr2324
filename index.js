@@ -7,6 +7,9 @@ const http = require("http");
 const app = express();
 const port = process.env.PORT || 3000;
 
+const WebSocket = require("ws");
+const wss = new WebSocket.Server({ server });
+
 // Create HTTP server and pass it to Socket.IO
 const server = http.createServer(app);
 const io = new Server(server);
@@ -1644,15 +1647,26 @@ io.on("connection", (socket) => {
 
 app.get("/", (req, res) => {
   res.send(
-    __dirname +
-      "/public/index.html" +
-      "Well Done!! I done decrypt this message through TLS!! ( -ω ･)▄︻┻┳══━一"
+    // __dirname +
+    //   "/public/index.html" +
+    "Well Done!! I done decrypt this message through TLS!! ( -ω ･)▄︻┻┳══━一"
   );
   //res.send("FOR BATTLE!! GAME ( -ω ･)▄︻┻┳══━一");
 });
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
+});
+
+wss.on("connection", function connection(ws) {
+  ws.on("message", function incoming(message) {
+    // Handle incoming messages from the client
+  });
+
+  // Send real-time updates to the client
+  setInterval(() => {
+    ws.send("Real-time update message");
+  }, 1000);
 });
 
 //Path:package.json
