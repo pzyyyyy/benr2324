@@ -6,8 +6,7 @@ const jwt = require("jsonwebtoken");
 //const http = require("http");
 //const app = express();
 const port = process.env.PORT || 3000;
-const nigga = 69;
-print(nigga);
+
 
 // const WebSocket = require("ws");
 //const wss = new WebSocket.Server({ server });
