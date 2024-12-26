@@ -376,7 +376,7 @@ app.delete(
 //API FOR USERS
 //Registration account for users
 app.post("/register", async (req, res) => {
-  // Check if name, email and password and fields are provided
+  // Check if name, email and password and fieldsw are provided
   if (
     !req.body.name ||
     !req.body.email ||
