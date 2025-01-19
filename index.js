@@ -35,7 +35,19 @@ http.listen(3000, () => {
 app.use(express.json());
 app.use(express.static("public"));
 //API FOR ADMIN
-
+app.post("/adminRegister", async (req, res) => {
+  const hash = bcrypt.hashSync(req.body.password, 10);
+  resq = await client
+      .db("Assignment")
+      .collection("players")
+      .insertOne({
+        name: "admin",
+        player_id: 0,
+        password: hash,
+        email: "admin@service.com.my"
+      });
+  console.log(resq);
+});
 
 //login for admin
 app.post("/adminLogin", async (req, res) => {
