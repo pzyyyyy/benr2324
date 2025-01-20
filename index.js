@@ -6,7 +6,24 @@ const jwt = require("jsonwebtoken");
 //const http = require("http");
 //const app = express();
 const port = process.env.PORT || 3000;
+const rateLimit = require("express-rate-limit");
 
+// Configure rate limiting for all requests
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: "Too many requests from this IP, please try again later.",
+});
+
+// Apply rate limiting to all routes
+app.use(limiter);
+
+// Example: Apply rate limiting only to specific routes
+const loginLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 5, // Limit each IP to 5 login attempts per windowMs
+  message: "Too many login attempts, please try again later.",
+});
 
 // const WebSocket = require("ws");
 //const wss = new WebSocket.Server({ server });
@@ -37,7 +54,7 @@ app.use(express.static("public"));
 //API FOR ADMIN
 
 //login for admin
-app.post("/adminLogin", async (req, res) => {
+app.post("/adminLogin", loginLimiter, async (req, res) => {
   // Check if all required fields are provided
   if (!req.body.name || !req.body.email) {
     return res.status(400).send("name and email are required. ( ˘ ³˘)❤");
@@ -473,7 +490,7 @@ app.post("/register", async (req, res) => {
 });
 
 //login for users
-app.post("/userLogin", async (req, res) => {
+app.post("/userLogin", loginLimiter, async (req, res) => {
   // Check if name and email fields are provided
   if (!req.body.name || !req.body.email) {
     //if not provided, return an error
