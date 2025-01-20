@@ -15,8 +15,6 @@ const limiter = rateLimit({
   message: "Too many requests from this IP, please try again later.",
 });
 
-// Apply rate limiting to all routes
-app.use(limiter);
 
 // Example: Apply rate limiting only to specific routes
 const loginLimiter = rateLimit({
@@ -51,6 +49,8 @@ http.listen(3000, () => {
 
 app.use(express.json());
 app.use(express.static("public"));
+// Apply rate limiting to all routes
+app.use(limiter);
 //API FOR ADMIN
 
 //login for admin
