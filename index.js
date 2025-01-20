@@ -1775,15 +1775,34 @@ app.listen(port, () => {
 //Path:package.json
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { message } = require("statuses");
-const uri = `mongodb+srv://pzy:${process.env.MongoDb_password}@cluster0.tvusokw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+
+// MongoDB connection URI for X.509 authentication
+const uri = `mongodb+srv://testuser@cluster0.tvusokw.mongodb.net/?retryWrites=true&w=majority&authMechanism=MONGODB-X509`;
+
+//Load the X.509 certificate
+const certPath = 'C:/Users/User/Desktop/MongoDB Cert/X509-cert-1666899228458069365.pem';
+//const cert = fs.readFileSync('C:/Users/User/Desktop/MongoDB Cert/X509-cert-1666899228458069365.pem');
+
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
+/*const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  }, */
+
+// Create a MongoClient with the X.509 certificate
 const client = new MongoClient(uri, {
+  tls: true,
+  tlsCertificateKeyFile: certPath,
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
   },
 });
+
+
 
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
