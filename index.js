@@ -6,7 +6,12 @@ const jwt = require("jsonwebtoken");
 //const http = require("http");
 //const app = express();
 const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 const rateLimit = require("express-rate-limit");
+const validator = require("validator");
+const https = require("https");
+const fs = require("fs");
+const forge = require("node-forge");
 
 // Configure rate limiting for all requests
 const limiter = rateLimit({
@@ -18,7 +23,7 @@ const limiter = rateLimit({
 
 // Example: Apply rate limiting only to specific routes
 const loginLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 5 minutes
+  windowMs: 5 * 60 * 1000, // 5 minutes
   max: 5, // Limit each IP to 5 login attempts per windowMs
   message: "Too many login attempts, please try again later.",
 });
@@ -51,6 +56,83 @@ app.use(express.json());
 app.use(express.static("public"));
 // Apply rate limiting to all routes
 app.use(limiter);
+
+// Generate Root CA
+function generateRootCA() {
+  const keys = forge.pki.rsa.generateKeyPair(2048);
+  const cert = forge.pki.createCertificate();
+
+  cert.publicKey = keys.publicKey;
+  cert.serialNumber = "01";
+  cert.validity.notBefore = new Date();
+  cert.validity.notAfter = new Date();
+  cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 10);
+
+  const attrs = [
+    { name: "commonName", value: "My Root CA" },
+    { name: "organizationName", value: "My Organization" },
+    { name: "countryName", value: "US" },
+  ];
+
+  cert.setSubject(attrs);
+  cert.setIssuer(attrs);
+  cert.sign(keys.privateKey, forge.md.sha256.create());
+
+  return {
+    privateKey: forge.pki.privateKeyToPem(keys.privateKey),
+    certificate: forge.pki.certificateToPem(cert),
+  };
+}
+
+// Sign Certificate
+function signCertificate(rootCA, subjectAttrs) {
+  const keys = forge.pki.rsa.generateKeyPair(2048);
+  const cert = forge.pki.createCertificate();
+
+  cert.publicKey = keys.publicKey;
+  cert.serialNumber = "02";
+  cert.validity.notBefore = new Date();
+  cert.validity.notAfter = new Date();
+  cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 1);
+
+  cert.setSubject(subjectAttrs);
+  cert.setIssuer(forge.pki.certificateFromPem(rootCA.certificate).subject.attributes);
+  cert.sign(forge.pki.privateKeyFromPem(rootCA.privateKey), forge.md.sha256.create());
+
+  return {
+    privateKey: forge.pki.privateKeyToPem(keys.privateKey),
+    certificate: forge.pki.certificateToPem(cert),
+  };
+}
+
+// Create certificates
+const rootCA = generateRootCA();
+const serverCert = signCertificate(rootCA, [
+  { name: "commonName", value: "localhost" },
+  { name: "organizationName", value: "My Organization" },
+]);
+
+// Write certificates to files (optional)
+fs.writeFileSync("rootCA.pem", rootCA.certificate);
+fs.writeFileSync("server-cert.pem", serverCert.certificate);
+fs.writeFileSync("server-key.pem", serverCert.privateKey);
+
+// Serve HTTPS
+const options = {
+  key: serverCert.privateKey,
+  cert: serverCert.certificate,
+};
+
+https.createServer(options, app).listen(PORT, () => {
+  console.log(`HTTPS server running on port ${PORT}`);
+});
+
+app.use(express.json());
+
+app.get("/", (req, res) => {
+  res.send("Welcome to the secure server!");
+});
+
 //API FOR ADMIN
 
 //login for admin
@@ -394,6 +476,21 @@ app.delete(
 //API FOR USERS
 //Registration account for users
 app.post("/register", async (req, res) => {
+  const { name, password } = req.body;
+  // Define your password policy
+  const isPasswordStrong = validator.isStrongPassword(password, {
+    minLength: 8,            // Minimum 8 characters
+    minLowercase: 1,         // At least 1 lowercase letter
+    minUppercase: 1,         // At least 1 uppercase letter
+    minNumbers: 1,           // At least 1 number
+    minSymbols: 1,           // At least 1 special character
+  });
+
+  if (!isPasswordStrong) {
+    return res.status(400).json({
+      message: "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.",
+    });
+  }
   // Check if name, email and password and fieldsw are provided
   if (
     !req.body.name ||
