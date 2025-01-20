@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 //const http = require("http");
 //const app = express();
 const port = process.env.PORT || 3000;
-const PORT = process.env.PORT || 3001;
+//const PORT = process.env.PORT || 3001;
 const rateLimit = require("express-rate-limit");
 const validator = require("validator");
 const https = require("https");
@@ -58,7 +58,7 @@ app.use(express.static("public"));
 app.use(limiter);
 
 // Generate Root CA
-function generateRootCA() {
+/*function generateRootCA() {
   const keys = forge.pki.rsa.generateKeyPair(2048);
   const cert = forge.pki.createCertificate();
 
@@ -125,13 +125,13 @@ const options = {
 
 https.createServer(options, app).listen(PORT, () => {
   console.log(`HTTPS server running on port ${PORT}`);
-});
+}); 
+app.get("/", (req, res) => {
+  res.send("Welcome to the secure server!");
+}); */
 
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Welcome to the secure server!");
-});
 
 //API FOR ADMIN
 
