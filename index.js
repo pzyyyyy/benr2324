@@ -13,7 +13,7 @@ const fs = require("fs");
 //const forge = require("node-forge");
 
 // Configure rate limiting for all requests
-const limiter = rateLimit({
+/*const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   message: "Too many requests from this IP, please try again later.",
@@ -26,6 +26,7 @@ const loginLimiter = rateLimit({
   max: 5, // Limit each IP to 5 login attempts per windowMs
   message: "Too many login attempts, please try again later.",
 });
+*/
 
 // const WebSocket = require("ws");
 //const wss = new WebSocket.Server({ server });
@@ -135,7 +136,7 @@ app.get("/", (req, res) => {
 //API FOR ADMIN
 
 //login for admin
-app.post("/adminLogin", loginLimiter, async (req, res) => {
+app.post("/adminLogin", async (req, res) => {
   // Check if all required fields are provided
   if (!req.body.name || !req.body.email) {
     return res.status(400).send("name and email are required. ( ˘ ³˘)❤");
@@ -490,7 +491,7 @@ app.post("/register", async (req, res) => {
       message: "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.",
     });
   }*/
- 
+
   // Check if name, email and password and fieldsw are provided
   if (
     !req.body.name ||
@@ -587,7 +588,7 @@ app.post("/register", async (req, res) => {
 });
 
 //login for users
-app.post("/userLogin", loginLimiter, async (req, res) => {
+app.post("/userLogin", async (req, res) => {
   // Check if name and email fields are provided
   if (!req.body.name || !req.body.email) {
     //if not provided, return an error
