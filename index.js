@@ -1778,59 +1778,35 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { message } = require("statuses");
 
 // MongoDB connection URI for X.509 authentication
-//const uri = `mongodb+srv://testuser@cluster0.tvusokw.mongodb.net/?retryWrites=true&w=majority&authMechanism=MONGODB-X509`;
-/*
-Load the X.509 certificate
-const certPath = 'C:/Users/User/Desktop/MongoDB Cert/X509-cert-1666899228458069365.pem';
-const cert = fs.readFileSync('C:/Users/User/Desktop/MongoDB Cert/X509-cert-1666899228458069365.pem');
+const uri = `mongodb+srv://testuser@cluster0.tvusokw.mongodb.net/?retryWrites=true&w=majority&authMechanism=MONGODB-X509`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }, 
+//Load the X.509 certificate
+const certPath = process.env.CERT_PATH; // Load the certificate path from the environment variable
 
 //Create a MongoClient with the X.509 certificate
 const client = new MongoClient(uri, {
-  tls: true,
-  tlsCertificateKeyFile: certPath,
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-}); 
-*/
-
-
-const certPath = process.env.CERT_PATH; // Load the certificate path from the environment variableth'
-const client = new MongoClient('mongodb+srv://cluster0.tvusokw.mongodb.net/?authSource=%24external&authMechanism=MONGODB-X509&retryWrites=true&w=majority&appName=Cluster0', {
   tlsCertificateKeyFile: certPath,
   serverApi: ServerApiVersion.v1
 });
+// const client = new MongoClient(uri, {
+//   tls: true,
+//   tlsCertificateKeyFile: certPath,
+//   serverApi: {
+//     version: ServerApiVersion.v1,
+//     strict: true,
+//     deprecationErrors: true,
+//   },
+// }); 
 
-async function run() {
-  try {
-    await client.connect();
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
-    // Your existing code to handle routes and other logic
-    const database = client.db("testDB");
-    const collection = database.collection("testCol");
-    const docCount = await collection.countDocuments({});
-    console.log(docCount);
 
-    // Ensure the client is not closed prematurely
-    app.locals.dbClient = client;
 
-  } catch (err) {
-    console.error(err);
-  }
-}
+/*const client = new MongoClient('mongodb+srv://cluster0.tvusokw.mongodb.net/?authSource=%24external&authMechanism=MONGODB-X509&retryWrites=true&w=majority&appName=Cluster0', {
+  tlsCertificateKeyFile: certPath,
+  serverApi: ServerApiVersion.v1
+});
+*/
 
-run().catch(console.dir);
 
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
