@@ -35,18 +35,18 @@ const loginLimiter = rateLimit({
 // const server = http.createServer(app);
 // const io = new Server(server);
 
-const app = require("express")();
-const http = require("http").Server(app);
-const io = require("socket.io")(http);
+// const app = require("express")();
+// const http = require("http").Server(app);
+// const io = require("socket.io")(http);
 
-io.on("connection", (socket) => {
-  console.log("A client connected");
+// io.on("connection", (socket) => {
+//   console.log("A client connected");
 
-  // Send real-time data to the client
-  setInterval(() => {
-    socket.emit("realtimeData", "Real-time update message");
-  }, 1000);
-});
+//   // Send real-time data to the client
+//   setInterval(() => {
+//     socket.emit("realtimeData", "Real-time update message");
+//   }, 1000);
+// });
 
 http.listen(3000, () => {
   console.log("Server running on port 3000");
@@ -1791,7 +1791,7 @@ const certPath = 'C:/Users/User/Desktop/MongoDB Cert/X509-cert-16668992284580693
     deprecationErrors: true,
   }, */
 
-// Create a MongoClient with the X.509 certificate
+/* Create a MongoClient with the X.509 certificate
 const client = new MongoClient(uri, {
   tls: true,
   tlsCertificateKeyFile: certPath,
@@ -1800,7 +1800,27 @@ const client = new MongoClient(uri, {
     strict: true,
     deprecationErrors: true,
   },
+}); */
+
+const credentials = 'certPath'
+const client = new MongoClient('mongodb+srv://cluster0.tvusokw.mongodb.net/?authSource=%24external&authMechanism=MONGODB-X509&retryWrites=true&w=majority&appName=Cluster0', {
+  tlsCertificateKeyFile: credentials,
+  serverApi: ServerApiVersion.v1
 });
+async function run() {
+  try {
+    await client.connect();
+    const database = client.db("testDB");
+    const collection = database.collection("testCol");
+    const docCount = await collection.countDocuments({});
+    console.log(docCount);
+    // perform actions using client
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+  }
+}
+run().catch(console.dir);
 
 
 
