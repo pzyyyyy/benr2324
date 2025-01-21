@@ -6,14 +6,14 @@ const jwt = require("jsonwebtoken");
 const http = require("http");
 const app = express();
 const port = process.env.PORT || 3000;
-//const rateLimit = require("express-rate-limit");
+const rateLimit = require("express-rate-limit");
 const validator = require("validator");
 //const https = require("https");
 const fs = require("fs");
-//const forge = require("node-forge");
+const forge = require("node-forge");
 
 // Configure rate limiting for all requests
-/*const limiter = rateLimit({
+const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   message: "Too many requests from this IP, please try again later.",
@@ -26,7 +26,7 @@ const loginLimiter = rateLimit({
   max: 5, // Limit each IP to 5 login attempts per windowMs
   message: "Too many login attempts, please try again later.",
 });
-*/
+
 
 // const WebSocket = require("ws");
 //const wss = new WebSocket.Server({ server });
@@ -55,7 +55,7 @@ const loginLimiter = rateLimit({
 app.use(express.json());
 app.use(express.static("public"));
 // Apply rate limiting to all routes
-//app.use(limiter);
+app.use(limiter);
 
 // Generate Root CA
 /*function generateRootCA() {
@@ -136,7 +136,7 @@ app.get("/", (req, res) => {
 //API FOR ADMIN
 
 //login for admin
-app.post("/adminLogin", async (req, res) => {
+app.post("/adminLogin", loginLimiter,async (req, res) => {
   // Check if all required fields are provided
   if (!req.body.name || !req.body.email) {
     return res.status(400).send("name and email are required. ( ˘ ³˘)❤");
@@ -478,7 +478,7 @@ app.delete(
 app.post("/register", async (req, res) => {
   const { name, password } = req.body;
   // Define your password policy
- /* const isPasswordStrong = validator.isStrongPassword(password, {
+  const isPasswordStrong = validator.isStrongPassword(password, {
     minLength: 8,            // Minimum 8 characters
     minLowercase: 1,         // At least 1 lowercase letter
     minUppercase: 1,         // At least 1 uppercase letter
@@ -490,7 +490,7 @@ app.post("/register", async (req, res) => {
     return res.status(400).json({
       message: "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.",
     });
-  }*/
+  }
 
   // Check if name, email and password and fieldsw are provided
   if (
@@ -588,7 +588,7 @@ app.post("/register", async (req, res) => {
 });
 
 //login for users
-app.post("/userLogin", async (req, res) => {
+app.post("/userLogin", loginLimiter,async (req, res) => {
   // Check if name and email fields are provided
   if (!req.body.name || !req.body.email) {
     //if not provided, return an error
