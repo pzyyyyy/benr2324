@@ -55,7 +55,7 @@ const loginLimiter = rateLimit({
 app.use(express.json());
 app.use(express.static("public"));
 // Apply rate limiting to all routes
-app.use(limiter);
+//app.use(limiter);
 
 // Generate Root CA
 /*function generateRootCA() {
