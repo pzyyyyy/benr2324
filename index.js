@@ -3,9 +3,30 @@ const bcrypt = require("bcrypt");
 const express = require("express");
 const jwt = require("jsonwebtoken");
 //const { Server } = require("socket.io");
-//const http = require("http");
-//const app = express();
+const http = require("http");
+const app = express();
 const port = process.env.PORT || 3000;
+//const rateLimit = require("express-rate-limit");
+const validator = require("validator");
+//const https = require("https");
+const fs = require("fs");
+//const forge = require("node-forge");
+
+// Configure rate limiting for all requests
+/*const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: "Too many requests from this IP, please try again later.",
+});
+
+
+// Example: Apply rate limiting only to specific routes
+const loginLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 5, // Limit each IP to 5 login attempts per windowMs
+  message: "Too many login attempts, please try again later.",
+});
+*/
 
 // const WebSocket = require("ws");
 //const wss = new WebSocket.Server({ server });
@@ -14,26 +35,106 @@ const port = process.env.PORT || 3000;
 // const server = http.createServer(app);
 // const io = new Server(server);
 
-const app = require("express")();
-const http = require("http").Server(app);
-const io = require("socket.io")(http);
+// const app = require("express")();
+// const http = require("http").Server(app);
+// const io = require("socket.io")(http);
 
-io.on("connection", (socket) => {
-  console.log("A client connected");
+// io.on("connection", (socket) => {
+//   console.log("A client connected");
 
-  // Send real-time data to the client
-  setInterval(() => {
-    socket.emit("realtimeData", "Real-time update message");
-  }, 1000);
-});
+//   // Send real-time data to the client
+//   setInterval(() => {
+//     socket.emit("realtimeData", "Real-time update message");
+//   }, 1000);
+// });
 
-http.listen(3000, () => {
-  console.log("Server running on port 3000");
-});
+// http.listen(3000, () => {
+//   console.log("Server running on port 3000");
+// });
 
 app.use(express.json());
 app.use(express.static("public"));
+// Apply rate limiting to all routes
+//app.use(limiter);
+
+// Generate Root CA
+/*function generateRootCA() {
+  const keys = forge.pki.rsa.generateKeyPair(2048);
+  const cert = forge.pki.createCertificate();
+
+  cert.publicKey = keys.publicKey;
+  cert.serialNumber = "01";
+  cert.validity.notBefore = new Date();
+  cert.validity.notAfter = new Date();
+  cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 10);
+
+  const attrs = [
+    { name: "commonName", value: "My Root CA" },
+    { name: "organizationName", value: "My Organization" },
+    { name: "countryName", value: "US" },
+  ];
+
+  cert.setSubject(attrs);
+  cert.setIssuer(attrs);
+  cert.sign(keys.privateKey, forge.md.sha256.create());
+
+  return {
+    privateKey: forge.pki.privateKeyToPem(keys.privateKey),
+    certificate: forge.pki.certificateToPem(cert),
+  };
+}
+
+// Sign Certificate
+function signCertificate(rootCA, subjectAttrs) {
+  const keys = forge.pki.rsa.generateKeyPair(2048);
+  const cert = forge.pki.createCertificate();
+
+  cert.publicKey = keys.publicKey;
+  cert.serialNumber = "02";
+  cert.validity.notBefore = new Date();
+  cert.validity.notAfter = new Date();
+  cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 1);
+
+  cert.setSubject(subjectAttrs);
+  cert.setIssuer(forge.pki.certificateFromPem(rootCA.certificate).subject.attributes);
+  cert.sign(forge.pki.privateKeyFromPem(rootCA.privateKey), forge.md.sha256.create());
+
+  return {
+    privateKey: forge.pki.privateKeyToPem(keys.privateKey),
+    certificate: forge.pki.certificateToPem(cert),
+  };
+}
+
+// Create certificates
+const rootCA = generateRootCA();
+const serverCert = signCertificate(rootCA, [
+  { name: "commonName", value: "localhost" },
+  { name: "organizationName", value: "My Organization" },
+]);
+
+// Write certificates to files (optional)
+fs.writeFileSync("rootCA.pem", rootCA.certificate);
+fs.writeFileSync("server-cert.pem", serverCert.certificate);
+fs.writeFileSync("server-key.pem", serverCert.privateKey);
+
+// Serve HTTPS
+const options = {
+  key: serverCert.privateKey,
+  cert: serverCert.certificate,
+};
+
+https.createServer(options, app).listen(PORT, () => {
+  console.log(`HTTPS server running on port ${PORT}`);
+}); 
+app.get("/", (req, res) => {
+  res.send("Welcome to the secure server!");
+}); */
+
+//app.use(express.json());
+
+
 //API FOR ADMIN
+
 //login for admin
 app.post("/adminLogin", async (req, res) => {
   // Check if all required fields are provided
@@ -375,7 +476,23 @@ app.delete(
 //API FOR USERS
 //Registration account for users
 app.post("/register", async (req, res) => {
-  // Check if name, email and password and fields are provided
+  const { name, password } = req.body;
+  // Define your password policy
+ /* const isPasswordStrong = validator.isStrongPassword(password, {
+    minLength: 8,            // Minimum 8 characters
+    minLowercase: 1,         // At least 1 lowercase letter
+    minUppercase: 1,         // At least 1 uppercase letter
+    minNumbers: 1,           // At least 1 number
+    minSymbols: 1,           // At least 1 special character
+  });
+
+  if (!isPasswordStrong) {
+    return res.status(400).json({
+      message: "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.",
+    });
+  }*/
+
+  // Check if name, email and password and fieldsw are provided
   if (
     !req.body.name ||
     !req.body.email ||
@@ -1659,15 +1776,55 @@ app.listen(port, () => {
 //Path:package.json
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { message } = require("statuses");
-const uri = `mongodb+srv://b022210249:${process.env.MongoDb_password}@cluster0.qexjojg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+
+// MongoDB connection URI for X.509 authentication
+//const uri = `mongodb+srv://testuser@cluster0.tvusokw.mongodb.net/?retryWrites=true&w=majority&authMechanism=MONGODB-X509`;
+/*
+Load the X.509 certificate
+const certPath = 'C:/Users/User/Desktop/MongoDB Cert/X509-cert-1666899228458069365.pem';
+const cert = fs.readFileSync('C:/Users/User/Desktop/MongoDB Cert/X509-cert-1666899228458069365.pem');
+
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
+  }, 
+
+//Create a MongoClient with the X.509 certificate
+const client = new MongoClient(uri, {
+  tls: true,
+  tlsCertificateKeyFile: certPath,
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
   },
+}); 
+*/
+
+
+const certPath = process.env.CERT_PATH; // Load the certificate path from the environment variableth'
+const client = new MongoClient('mongodb+srv://cluster0.tvusokw.mongodb.net/?authSource=%24external&authMechanism=MONGODB-X509&retryWrites=true&w=majority&appName=Cluster0', {
+  tlsCertificateKeyFile: certPath,
+  serverApi: ServerApiVersion.v1
 });
+/*async function run() {
+  try {
+    await client.connect();
+    const database = client.db("testDB");
+    const collection = database.collection("testCol");
+    const docCount = await collection.countDocuments({});
+    console.log(docCount);
+    // perform actions using client
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+  }
+}
+run().catch(console.dir);
+*/
 
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
