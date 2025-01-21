@@ -477,7 +477,7 @@ app.delete(
 app.post("/register", async (req, res) => {
   const { name, password } = req.body;
   // Define your password policy
-  const isPasswordStrong = validator.isStrongPassword(password, {
+ /* const isPasswordStrong = validator.isStrongPassword(password, {
     minLength: 8,            // Minimum 8 characters
     minLowercase: 1,         // At least 1 lowercase letter
     minUppercase: 1,         // At least 1 uppercase letter
@@ -489,7 +489,8 @@ app.post("/register", async (req, res) => {
     return res.status(400).json({
       message: "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.",
     });
-  }
+  }*/
+ 
   // Check if name, email and password and fieldsw are provided
   if (
     !req.body.name ||
