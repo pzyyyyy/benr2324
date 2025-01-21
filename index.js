@@ -1778,13 +1778,13 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { message } = require("statuses");
 
 // MongoDB connection URI for X.509 authentication
-const uri = `mongodb+srv://testuser@cluster0.tvusokw.mongodb.net/?retryWrites=true&w=majority&authMechanism=MONGODB-X509`;
+// const uri = `mongodb+srv://testuser@cluster0.tvusokw.mongodb.net/?retryWrites=true&w=majority&authMechanism=MONGODB-X509`;
 
 //Load the X.509 certificate
 const certPath = process.env.CERT_PATH; // Load the certificate path from the environment variable
 
 //Create a MongoClient with the X.509 certificate
-const client = new MongoClient(uri, {
+const client = new MongoClient('mongodb+srv://cluster0.tvusokw.mongodb.net/?authSource=%24external&authMechanism=MONGODB-X509&retryWrites=true&w=majority&appName=Cluster0', {
   tlsCertificateKeyFile: certPath,
   serverApi: ServerApiVersion.v1
 });
