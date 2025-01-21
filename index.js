@@ -1776,7 +1776,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { message } = require("statuses");
 
 // MongoDB connection URI for X.509 authentication
-const uri = `mongodb+srv://testuser@cluster0.tvusokw.mongodb.net/?retryWrites=true&w=majority&authMechanism=MONGODB-X509`;
+//const uri = `mongodb+srv://testuser@cluster0.tvusokw.mongodb.net/?retryWrites=true&w=majority&authMechanism=MONGODB-X509`;
 /*
 Load the X.509 certificate
 const certPath = 'C:/Users/User/Desktop/MongoDB Cert/X509-cert-1666899228458069365.pem';
@@ -1808,7 +1808,7 @@ const client = new MongoClient('mongodb+srv://cluster0.tvusokw.mongodb.net/?auth
   tlsCertificateKeyFile: certPath,
   serverApi: ServerApiVersion.v1
 });
-async function run() {
+/*async function run() {
   try {
     await client.connect();
     const database = client.db("testDB");
@@ -1822,8 +1822,7 @@ async function run() {
   }
 }
 run().catch(console.dir);
-
-
+*/
 
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
