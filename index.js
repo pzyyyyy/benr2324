@@ -1810,21 +1810,27 @@ const client = new MongoClient('mongodb+srv://cluster0.tvusokw.mongodb.net/?auth
   tlsCertificateKeyFile: certPath,
   serverApi: ServerApiVersion.v1
 });
-/*async function run() {
+
+async function run() {
   try {
     await client.connect();
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+
+    // Your existing code to handle routes and other logic
     const database = client.db("testDB");
     const collection = database.collection("testCol");
     const docCount = await collection.countDocuments({});
     console.log(docCount);
-    // perform actions using client
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
+
+    // Ensure the client is not closed prematurely
+    app.locals.dbClient = client;
+
+  } catch (err) {
+    console.error(err);
   }
 }
+
 run().catch(console.dir);
-*/
 
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
