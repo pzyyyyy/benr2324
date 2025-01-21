@@ -3,8 +3,8 @@ const bcrypt = require("bcrypt");
 const express = require("express");
 const jwt = require("jsonwebtoken");
 //const { Server } = require("socket.io");
-//const http = require("http");
-//const app = express();
+const http = require("http");
+const app = express();
 const port = process.env.PORT || 3000;
 //const PORT = process.env.PORT || 3001;
 const rateLimit = require("express-rate-limit");
@@ -48,9 +48,9 @@ const loginLimiter = rateLimit({
 //   }, 1000);
 // });
 
-http.listen(3000, () => {
-  console.log("Server running on port 3000");
-});
+// http.listen(3000, () => {
+//   console.log("Server running on port 3000");
+// });
 
 app.use(express.json());
 app.use(express.static("public"));
@@ -1778,20 +1778,20 @@ const { message } = require("statuses");
 
 // MongoDB connection URI for X.509 authentication
 const uri = `mongodb+srv://testuser@cluster0.tvusokw.mongodb.net/?retryWrites=true&w=majority&authMechanism=MONGODB-X509`;
-
-//Load the X.509 certificate
+/*
+Load the X.509 certificate
 const certPath = 'C:/Users/User/Desktop/MongoDB Cert/X509-cert-1666899228458069365.pem';
-//const cert = fs.readFileSync('C:/Users/User/Desktop/MongoDB Cert/X509-cert-1666899228458069365.pem');
+const cert = fs.readFileSync('C:/Users/User/Desktop/MongoDB Cert/X509-cert-1666899228458069365.pem');
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-/*const client = new MongoClient(uri, {
+const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }, */
+  }, 
 
-/* Create a MongoClient with the X.509 certificate
+//Create a MongoClient with the X.509 certificate
 const client = new MongoClient(uri, {
   tls: true,
   tlsCertificateKeyFile: certPath,
@@ -1800,11 +1800,13 @@ const client = new MongoClient(uri, {
     strict: true,
     deprecationErrors: true,
   },
-}); */
+}); 
+*/
 
-const credentials = 'certPath'
+
+const certPath = process.env.CERT_PATH; // Load the certificate path from the environment variableth'
 const client = new MongoClient('mongodb+srv://cluster0.tvusokw.mongodb.net/?authSource=%24external&authMechanism=MONGODB-X509&retryWrites=true&w=majority&appName=Cluster0', {
-  tlsCertificateKeyFile: credentials,
+  tlsCertificateKeyFile: certPath,
   serverApi: ServerApiVersion.v1
 });
 async function run() {
