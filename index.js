@@ -6,12 +6,11 @@ const jwt = require("jsonwebtoken");
 const http = require("http");
 const app = express();
 const port = process.env.PORT || 3000;
-//const PORT = process.env.PORT || 3001;
 const rateLimit = require("express-rate-limit");
 const validator = require("validator");
 //const https = require("https");
 const fs = require("fs");
-const forge = require("node-forge");
+//const forge = require("node-forge");
 
 // Configure rate limiting for all requests
 const limiter = rateLimit({
@@ -130,7 +129,7 @@ app.get("/", (req, res) => {
   res.send("Welcome to the secure server!");
 }); */
 
-app.use(express.json());
+//app.use(express.json());
 
 
 //API FOR ADMIN
