@@ -1659,7 +1659,21 @@ app.get("/leaderboard", verifyToken, async (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("for battle");
+  res.send(`
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>reCAPTCHA demo: Simple page</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  </head>
+  <body>
+    <form action="?" method="POST">
+      <div class="g-recaptcha" data-sitekey="6LcJ1r8qAAAAAKNQRUumke5jTNxeRxfixAeAVJq9"></div>
+      <br/>
+      <input type="submit" value="Submit">
+    </form>
+  </body>
+</html>`);
 });
 
 app.listen(port, () => {
