@@ -2,7 +2,6 @@ require("dotenv").config();
 const bcrypt = require("bcrypt");
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const http = require("http");
 const app = express();
 const port = process.env.PORT || 3000;
 const rateLimit = require("express-rate-limit");
@@ -31,7 +30,7 @@ app.use(express.json());
 app.use(express.static("public"));
 // Apply rate limiting to all routes
 app.use(limiter);
-
+app.use(express.urlencoded({ extended: true }));
 //API FOR ADMIN
 
 //login for admin
@@ -415,7 +414,7 @@ app.post("/register", async (req, res) => {
     res.status(400).send("username or email already exist");
   } else {
     //if not, hash the password
-    const hash = bcrypt.hashSync(req.body.password, 10);
+    const hash = bcrypt.hashSync(req.body.password, 12);
     // Find the player with the highest player_id
     const highestIdPlayer = await client
       .db("Assignment")
@@ -1660,12 +1659,7 @@ app.get("/leaderboard", verifyToken, async (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send(
-    // __dirname +
-    //   "/public/index.html" +
-    "Welcome To My World!! ( -ω ･)▄︻┻┳══━一"
-  );
-  //res.send("FOR BATTLE!! GAME ( -ω ･)▄︻┻┳══━一");
+  res.send("for battle");
 });
 
 app.listen(port, () => {
@@ -1695,38 +1689,38 @@ const client = new MongoClient('mongodb+srv://cluster0.tvusokw.mongodb.net/?auth
 //   },
 // }); 
 
-// Example route with reCAPTCHA verification
-app.post("/submit", async (req, res) => {
-  const token = req.body["g-recaptcha-response"];
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+// // Example route with reCAPTCHA verification
+// app.post("/submit", async (req, res) => {
+//   const token = req.body["g-recaptcha-response"];
+//   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
 
-  if (!token) {
-    return res.status(400).json({ message: "No reCAPTCHA token provided" });
-  }
+//   if (!token) {
+//     return res.status(400).json({ message: "No reCAPTCHA token provided" });
+//   }
 
-  try {
-    const response = await axios.post(
-      `https://www.google.com/recaptcha/api/siteverify`,
-      null,
-      {
-        params: {
-          secret: secretKey,
-          response: token,
-        },
-      }
-    );
+//   try {
+//     const response = await axios.post(
+//       `https://www.google.com/recaptcha/api/siteverify`,
+//       null,
+//       {
+//         params: {
+//           secret: secretKey,
+//           response: token,
+//         },
+//       }
+//     );
 
-    if (response.data.success) {
-      // Proceed with your application logic
-      res.status(200).json({ message: "reCAPTCHA verified successfully" });
-    } else {
-      res.status(400).json({ message: "reCAPTCHA verification failed" });
-    }
-  } catch (error) {
-    console.error("Error verifying reCAPTCHA:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
+//     if (response.data.success) {
+//       // Proceed with your application logic
+//       res.status(200).json({ message: "reCAPTCHA verified successfully" });
+//     } else {
+//       res.status(400).json({ message: "reCAPTCHA verification failed" });
+//     }
+//   } catch (error) {
+//     console.error("Error verifying reCAPTCHA:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// });
 
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
