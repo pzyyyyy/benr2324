@@ -1703,38 +1703,6 @@ const client = new MongoClient('mongodb+srv://cluster0.tvusokw.mongodb.net/?auth
 //   },
 // }); 
 
-// // Example route with reCAPTCHA verification
-// app.post("/submit", async (req, res) => {
-//   const token = req.body["g-recaptcha-response"];
-//   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-
-//   if (!token) {
-//     return res.status(400).json({ message: "No reCAPTCHA token provided" });
-//   }
-
-//   try {
-//     const response = await axios.post(
-//       `https://www.google.com/recaptcha/api/siteverify`,
-//       null,
-//       {
-//         params: {
-//           secret: secretKey,
-//           response: token,
-//         },
-//       }
-//     );
-
-//     if (response.data.success) {
-//       // Proceed with your application logic
-//       res.status(200).json({ message: "reCAPTCHA verified successfully" });
-//     } else {
-//       res.status(400).json({ message: "reCAPTCHA verification failed" });
-//     }
-//   } catch (error) {
-//     console.error("Error verifying reCAPTCHA:", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// });
 
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
