@@ -1676,6 +1676,39 @@ app.get("/", (req, res) => {
 </html>`);
 });
 
+// Handle form submission and reCAPTCHA verification
+app.post('/', async (req, res) => {
+  const token = req.body["g-recaptcha-response"];
+  const secretKey = RECAPTCHA_SECRET_KEY;
+
+  if (!token) {
+    return res.status(400).json({ message: "No reCAPTCHA token provided" });
+  }
+
+  try {
+    const response = await axios.post(
+      `https://www.google.com/recaptcha/api/siteverify`,
+      null,
+      {
+        params: {
+          secret: secretKey,
+          response: token,
+        },
+      }
+    );
+
+    if (response.data.success) {
+      // Proceed with your application logic
+      res.status(200).json({ message: "reCAPTCHA verified successfully" });
+    } else {
+      res.status(400).json({ message: "reCAPTCHA verification failed" });
+    }
+  } catch (error) {
+    console.error("Error verifying reCAPTCHA:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
