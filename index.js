@@ -10,6 +10,7 @@ const fs = require("fs");
 const forge = require("node-forge");
 const axios = require("axios");
 
+
 // Configure rate limiting for all requests
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -375,118 +376,138 @@ app.delete(
 //Registration account for users
 app.post("/register", async (req, res) => {
   const { name, password } = req.body;
-  // Define your password policy
-  const isPasswordStrong = validator.isStrongPassword(password, {
-    minLength: 8,            // Minimum 8 characters
-    minLowercase: 1,         // At least 1 lowercase letter
-    minUppercase: 1,         // At least 1 uppercase letter
-    minNumbers: 1,           // At least 1 number
-    minSymbols: 1,           // At least 1 special character
-  });
+  const token = req.body["g-recaptcha-response"];
 
-  if (!isPasswordStrong) {
-    return res.status(400).json({
-      message: "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.",
-    });
+  if (!token) {
+    return res.status(400).json({ message: "No reCAPTCHA token provided" });
   }
 
-  // Check if name, email and password and fieldsw are provided
-  if (
-    !req.body.name ||
-    !req.body.email ||
-    !req.body.password ||
-    !req.body.gender
-  ) {
-    return res //if not provided, send the message
-      .status(400)
-      .send("name,email,password and gender are required.\n 안돼!!!(ू˃̣̣̣̣̣̣︿˂̣̣̣̣̣̣ ू)");
-  }
-  // Check if the username or email already exists
-  let existing =
-    (await client.db("Assignment").collection("players").findOne({
-      name: req.body.username,
-    })) ||
-    (await client.db("Assignment").collection("players").findOne({
-      email: req.body.email,
-    }));
-  //if the username or email already exists, return an error
-  if (existing) {
-    res.status(400).send("username or email already exist");
-  } else {
-    //if not, hash the password
-    const hash = bcrypt.hashSync(req.body.password, 12);
-    // Find the player with the highest player_id
-    const highestIdPlayer = await client
-      .db("Assignment")
-      .collection("players")
-      .find()
-      .sort({ player_id: -1 })
-      .limit(1)
-      .toArray();
-    const highestId = highestIdPlayer[0] ? highestIdPlayer[0].player_id : 0;
-    // Increment the highest player_id by 1
-    const nextId = highestId + 1;
-    let countNum = await client
-      .db("Assignment")
-      .collection("characters_of_players")
-      .countDocuments();
-    //insert the data into the database
-    let resq = await client
-      .db("Assignment")
-      .collection("players")
-      .insertOne({
-        name: req.body.name,
-        player_id: nextId,
-        password: hash,
-        email: req.body.email,
-        gender: req.body.gender,
-        //collection of the player(default character is Lillia)
-        collection: {
-          characterList: ["Lillia"],
-          character_selected: { name: "Lillia", charId: countNum },
-          charId: [countNum],
+  try {
+    const response = await axios.post(
+      `https://www.google.com/recaptcha/api/siteverify`,
+      null,
+      {
+        params: {
+          secret: RECAPTCHA_SECRET_KEY,
+          response: token,
         },
-        roles: "player",
-        money: 0,
-        points: 0,
-        achievements: ["A beginner player"],
-        friends: { friendList: [], sentRequests: [], needAcceptRequests: [] },
-        starterPackTaken: false,
-      });
-    //get the character Lillia from the database
-    let Lilla = await client
-      .db("Assignment")
-      .collection("characters")
-      .aggregate([
-        {
-          $match: { name: "Lillia" },
-        },
-        {
-          $project: {
-            _id: 0,
-            name: 1,
-            health: 1,
-            attack: 1,
-            speed: 1,
-            type: 1,
-          },
-        },
-      ])
-      .toArray();
-    console.log(Lilla[0]);
-    //add the character Lillia to the character of the player collection
-    await client
-      .db("Assignment")
-      .collection("characters_of_players")
-      .insertOne({ char_id: countNum, characters: Lilla[0] }, { upsert: true });
-    res.send(
-      "Congratulation! Your account register succesfully!\nLog in to start your battle journey! \n( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ )"
+      }
     );
-  }
+
+    if (!response.data.success) {
+      return res.status(400).json({ message: "reCAPTCHA verification failed" });
+    }
+
+    // Define your password policy
+    const isPasswordStrong = validator.isStrongPassword(password, {
+      minLength: 8,            // Minimum 8 characters
+      minLowercase: 1,         // At least 1 lowercase letter
+      minUppercase: 1,         // At least 1 uppercase letter
+      minNumbers: 1,           // At least 1 number
+      minSymbols: 1,           // At least 1 special character
+    });
+
+    if (!isPasswordStrong) {
+      return res.status(400).json({
+        message: "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.",
+      });
+    }
+
+    // Check if name, email and password and fieldsw are provided
+    if (
+      !req.body.name ||
+      !req.body.email ||
+      !req.body.password ||
+      !req.body.gender
+    ) {
+      return res //if not provided, send the message
+        .status(400)
+        .send("name,email,password and gender are required.\n 안돼!!!(ू˃̣̣̣̣̣̣︿˂̣̣̣̣̣̣ ू)");
+    }
+    // Check if the username or email already exists
+    let existing =
+      (await client.db("Assignment").collection("players").findOne({
+        name: req.body.username,
+      })) ||
+      (await client.db("Assignment").collection("players").findOne({
+        email: req.body.email,
+      }));
+    //if the username or email already exists, return an error
+    if (existing) {
+      res.status(400).send("username or email already exist");
+    }
+      // Hash the password
+      const hash = bcrypt.hashSync(password, 12);
+
+      // Find the player with the highest player_id
+      const highestIdPlayer = await client.db("Assignment").collection("players").find().sort({ player_id: -1 }).limit(1).toArray();
+      const highestId = highestIdPlayer[0] ? highestIdPlayer[0].player_id : 0;
+      const nextId = highestId + 1;
+      
+      let countNum = await client
+        .db("Assignment")
+        .collection("characters_of_players")
+        .countDocuments();
+      //insert the data into the database
+      let resq = await client
+        .db("Assignment")
+        .collection("players")
+        .insertOne({
+          name: req.body.name,
+          player_id: nextId,
+          password: hash,
+          email: req.body.email,
+          gender: req.body.gender,
+          //collection of the player(default character is Lillia)
+          collection: {
+            characterList: ["Lillia"],
+            character_selected: { name: "Lillia", charId: countNum },
+            charId: [countNum],
+          },
+          roles: "player",
+          money: 0,
+          points: 0,
+          achievements: ["A beginner player"],
+          friends: { friendList: [], sentRequests: [], needAcceptRequests: [] },
+          starterPackTaken: false,
+        });
+      //get the character Lillia from the database
+      let Lilla = await client
+        .db("Assignment")
+        .collection("characters")
+        .aggregate([
+          {
+            $match: { name: "Lillia" },
+          },
+          {
+            $project: {
+              _id: 0,
+              name: 1,
+              health: 1,
+              attack: 1,
+              speed: 1,
+              type: 1,
+            },
+          },
+        ])
+        .toArray();
+      console.log(Lilla[0]);
+      //add the character Lillia to the character of the player collection
+      await client
+        .db("Assignment")
+        .collection("characters_of_players")
+        .insertOne({ char_id: countNum, characters: Lilla[0] }, { upsert: true });
+      res.send(
+        "Congratulation! Your account register succesfully!\nLog in to start your battle journey! \n( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ )"
+      );
+    } catch (error) {
+      console.error("Error verifying reCAPTCHA:", error);
+      res.status(500).json({ message: "Server error" });
+    }
 });
 
 //login for users
-app.post("/userLogin", loginLimiter,async (req, res) => {
+app.post("/userLogin", loginLimiter, async (req, res) => {
   // Check if name and email fields are provided
   if (!req.body.name || !req.body.email) {
     //if not provided, return an error
