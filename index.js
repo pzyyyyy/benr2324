@@ -443,7 +443,7 @@ app.post("/register", async (req, res) => {
       const highestIdPlayer = await client.db("Assignment").collection("players").find().sort({ player_id: -1 }).limit(1).toArray();
       const highestId = highestIdPlayer[0] ? highestIdPlayer[0].player_id : 0;
       const nextId = highestId + 1;
-      
+
       let countNum = await client
         .db("Assignment")
         .collection("characters_of_players")
@@ -508,6 +508,28 @@ app.post("/register", async (req, res) => {
 
 //login for users
 app.post("/userLogin", loginLimiter, async (req, res) => {
+  const token = req.body["g-recaptcha-response"];
+  if (!token) {
+    return res.status(400).json({ message: "No reCAPTCHA token provided" });
+  }
+
+  try {
+    const response = await axios.post(
+      `https://www.google.com/recaptcha/api/siteverify`,
+      null,
+      {
+        params: {
+          secret: RECAPTCHA_SECRET_KEY,
+          response: token,
+        },
+      }
+    );
+
+    if (!response.data.success) {
+      return res.status(400).json({ message: "reCAPTCHA verification failed" });
+    }
+
+
   // Check if name and email fields are provided
   if (!req.body.name || !req.body.email) {
     //if not provided, return an error
@@ -553,6 +575,10 @@ app.post("/userLogin", loginLimiter, async (req, res) => {
       res.send("Password not provided ⸨◺_◿⸩");
     }
   }
+} catch (error) {
+  console.error("Error verifying reCAPTCHA:", error);
+  res.status(500).json({ message: "Server error" });
+}
 });
 
 //login to get startpack
