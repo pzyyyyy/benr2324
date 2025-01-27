@@ -1658,12 +1658,14 @@ app.get("/leaderboard", verifyToken, async (req, res) => {
   }
 });
 
+const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
+
 app.get("/", (req, res) => {
   res.send(`
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>reCAPTCHA demo: Simple page</title>
+    <title>FOR BATTLE</title>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   </head>
   <body>
