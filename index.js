@@ -378,7 +378,7 @@ app.post("/register", async (req, res) => {
   const { name, password } = req.body;
   const token = req.body["g-recaptcha-response"];
 
-  if (!token) {
+ /*  if (!token) {
     return res.status(400).json({ message: "No reCAPTCHA token provided" });
   }
 
@@ -397,7 +397,7 @@ app.post("/register", async (req, res) => {
     if (!response.data.success) {
       return res.status(400).json({ message: "reCAPTCHA verification failed" });
     }
-
+ */
     // Define your password policy
     const isPasswordStrong = validator.isStrongPassword(password, {
       minLength: 8,            // Minimum 8 characters
@@ -500,16 +500,17 @@ app.post("/register", async (req, res) => {
       res.send(
         "Congratulation! Your account register succesfully!\nLog in to start your battle journey! \n( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ )"
       );
-    } catch (error) {
+  /*catch (error) {
       console.error("Error verifying reCAPTCHA:", error);
       res.status(500).json({ message: "Server error" });
-    }
+    } */
 });
+
 
 //login for users
 app.post("/userLogin", loginLimiter, async (req, res) => {
   const token = req.body["g-recaptcha-response"];
-  if (!token) {
+ /* if (!token) {
     return res.status(400).json({ message: "No reCAPTCHA token provided" });
   }
 
@@ -528,7 +529,7 @@ app.post("/userLogin", loginLimiter, async (req, res) => {
     if (!response.data.success) {
       return res.status(400).json({ message: "reCAPTCHA verification failed" });
     }
-
+*/
 
   // Check if name and email fields are provided
   if (!req.body.name || !req.body.email) {
@@ -575,11 +576,12 @@ app.post("/userLogin", loginLimiter, async (req, res) => {
       res.send("Password not provided ⸨◺_◿⸩");
     }
   }
-} catch (error) {
+ /*}catch (error) {
   console.error("Error verifying reCAPTCHA:", error);
   res.status(500).json({ message: "Server error" });
-}
+}*/
 });
+
 
 //login to get startpack
 app.patch("/login/starterpack", verifyToken, async (req, res) => {
