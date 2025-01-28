@@ -1710,7 +1710,7 @@ app.get("/", (req, res) => {
 });
 
 // Handle form submission and reCAPTCHA verification
-app.post('/', async (req, res) => {
+/*app.post('/', async (req, res) => {
   const token = req.body["g-recaptcha-response"];
 
   try {
@@ -1721,7 +1721,7 @@ app.post('/', async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
-
+*/
 
 // Function to verify reCAPTCHA token
 async function verifyRecaptchaToken(token) {
