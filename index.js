@@ -1705,28 +1705,37 @@ app.get("/", (req, res) => {
       <br/>
       <input type="submit" value="Submit">
     </form>
-  </body>
+</body>
 </html>`);
 });
 
 // Handle form submission and reCAPTCHA verification
-/*app.post('/', async (req, res) => {
+app.post('/', (req, res) => {
   const token = req.body["g-recaptcha-response"];
 
-  try {
-    await verifyRecaptchaToken(token);
-    res.status(200).json({ message: "reCAPTCHA verified successfully" });
-  } catch (error) {
-    console.error("Error verifying reCAPTCHA:", error.message);
-    res.status(400).json({ message: error.message });
-  }
+  verifyRecaptchaToken(token)
+    .then(success => {
+      if (success) {
+        res.status(200).json({ message: "reCAPTCHA verified successfully" });
+      } else {
+        res.status(400).json({ message: "reCAPTCHA verification failed" });
+      }
+    })
+    .catch(error => {
+      console.error("Error verifying reCAPTCHA:", error.message);
+      res.status(400).json({ message: error.message });
+    });
 });
-*/
 
 // Function to verify reCAPTCHA token
-async function verifyRecaptchaToken(token) {
-  const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${token}`);
-  return response.data.success;
+//async function verifyRecaptchaToken(token) {
+// const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${token}`);
+//  return response.data.success;
+//}
+
+function verifyRecaptchaToken(token) {
+  return axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${token}`)
+    .then(response => response.data.success);
 }
 
 app.listen(port, () => {
