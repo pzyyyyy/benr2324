@@ -1700,7 +1700,7 @@ app.get("/", (req, res) => {
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   </head>
   <body>
-    <form action="?" method="POST">
+    <form action="/" method="POST">
       <div class="g-recaptcha" data-sitekey="6LffhJIqAAAAAF2Ms7Qh4n8KJ-QrVBSZhu3Ru12_"></div>
       <br/>
       <input type="submit" value="Submit">
