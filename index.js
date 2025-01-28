@@ -38,6 +38,8 @@ app.use(express.urlencoded({ extended: true }));
 //login for admin
 app.post("/adminLogin", loginLimiter,async (req, res) => {
   const token = req.body["g-recaptcha-response"];
+  const recaptchaToken = req.body['g-recaptcha-response'];
+  const isHuman = await verifyRecaptchaToken(recaptchaToken);
 
   // Check if all required fields are provided
   if (!req.body.name || !req.body.email) {
@@ -1691,9 +1693,6 @@ app.get("/leaderboard", verifyToken, async (req, res) => {
 
 const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
 
-// Middleware to parse JSON and URL-encoded data
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
   res.send(`
@@ -1714,7 +1713,7 @@ app.get("/", (req, res) => {
 });
 
 // Handle form submission and reCAPTCHA verification
-app.post('/', (req, res) => {
+/*app.post('/', (req, res) => {
   const token = req.body["g-recaptcha-response"];
 
   verifyRecaptchaToken(token)
@@ -1730,21 +1729,14 @@ app.post('/', (req, res) => {
       res.status(400).json({ message: error.message });
     });
 });
+*/
 
 // Function to verify reCAPTCHA token
-//async function verifyRecaptchaToken(token) {
-// const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${token}`);
-//  return response.data.success;
-//}
-if (!RECAPTCHA_SECRET_KEY) {
-  console.error("RECAPTCHA_SECRET_KEY is not defined. Please set it in the environment variables.");
-  process.exit(1);
+async function verifyRecaptchaToken(token) {
+ const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${token}`);
+  return response.data.success;
 }
 
-function verifyRecaptchaToken(token) {
-  return axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${token}`)
-    .then(response => response.data.success);
-}
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
