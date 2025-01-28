@@ -1691,6 +1691,10 @@ app.get("/leaderboard", verifyToken, async (req, res) => {
 
 const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
 
+// Middleware to parse JSON and URL-encoded data
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.get("/", (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -1732,6 +1736,10 @@ app.post('/', (req, res) => {
 // const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${token}`);
 //  return response.data.success;
 //}
+if (!RECAPTCHA_SECRET_KEY) {
+  console.error("RECAPTCHA_SECRET_KEY is not defined. Please set it in the environment variables.");
+  process.exit(1);
+}
 
 function verifyRecaptchaToken(token) {
   return axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${token}`)
