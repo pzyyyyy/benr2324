@@ -9,6 +9,7 @@ const validator = require("validator");
 const fs = require("fs");
 const forge = require("node-forge");
 const axios = require("axios");
+const verifyRecaptcha = require("./verifyRecaptcha"); // Import the verifyRecaptcha function
 
 
 // Configure rate limiting for all requests
@@ -37,7 +38,7 @@ app.use(express.urlencoded({ extended: true }));
 //login for admin
 app.post("/adminLogin", loginLimiter,async (req, res) => {
   const token = req.body["g-recaptcha-response"];
-  
+
   // Check if all required fields are provided
   if (!req.body.name || !req.body.email) {
     return res.status(400).send("name and email are required. ( ˘ ³˘)❤");
@@ -380,6 +381,9 @@ app.post("/register", async (req, res) => {
   const { name, password } = req.body;
   const token = req.body["g-recaptcha-response"];
 
+  try {
+    await verifyRecaptcha(token);
+  
     // Define your password policy
     const isPasswordStrong = validator.isStrongPassword(password, {
       minLength: 8,            // Minimum 8 characters
@@ -482,16 +486,21 @@ app.post("/register", async (req, res) => {
       res.send(
         "Congratulation! Your account register succesfully!\nLog in to start your battle journey! \n( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ )"
       );
-  /*catch (error) {
-      console.error("Error verifying reCAPTCHA:", error);
-      res.status(500).json({ message: "Server error" });
-    } */
+
+} catch (error) {
+  console.error("Error verifying reCAPTCHA:", error.message);
+  res.status(400).json({ message: error.message });
+}
 });
 
 
 //login for users
 app.post("/userLogin", loginLimiter, async (req, res) => {
   const token = req.body["g-recaptcha-response"];
+
+  try {
+    await verifyRecaptcha(token);
+  
 
   // Check if name and email fields are provided
   if (!req.body.name || !req.body.email) {
@@ -538,10 +547,10 @@ app.post("/userLogin", loginLimiter, async (req, res) => {
       res.send("Password not provided ⸨◺_◿⸩");
     }
   }
- /*}catch (error) {
-  console.error("Error verifying reCAPTCHA:", error);
-  res.status(500).json({ message: "Server error" });
-}*/
+} catch (error) {
+  console.error("Error verifying reCAPTCHA:", error.message);
+  res.status(400).json({ message: error.message });
+}
 });
 
 
@@ -1692,33 +1701,13 @@ app.get("/", (req, res) => {
 // Handle form submission and reCAPTCHA verification
 app.post('/', async (req, res) => {
   const token = req.body["g-recaptcha-response"];
-  const secretKey = RECAPTCHA_SECRET_KEY;
-
-  if (!token) {
-    return res.status(400).json({ message: "No reCAPTCHA token provided" });
-  }
 
   try {
-    const response = await axios.post(
-      `https://www.google.com/recaptcha/api/siteverify`,
-      null,
-      {
-        params: {
-          secret: secretKey,
-          response: token,
-        },
-      }
-    );
-
-    if (response.data.success) {
-      // Proceed with your application logic
-      res.status(200).json({ message: "reCAPTCHA verified successfully" });
-    } else {
-      res.status(400).json({ message: "reCAPTCHA verification failed" });
-    }
+    await verifyRecaptcha(token);
+    res.status(200).json({ message: "reCAPTCHA verified successfully" });
   } catch (error) {
-    console.error("Error verifying reCAPTCHA:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error verifying reCAPTCHA:", error.message);
+    res.status(400).json({ message: error.message });
   }
 });
 
