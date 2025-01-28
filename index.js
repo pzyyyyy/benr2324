@@ -498,15 +498,16 @@ app.post("/register", async (req, res) => {
 app.post("/userLogin", loginLimiter, async (req, res) => {
   const token = req.body["g-recaptcha-response"];
 
-  try {
+/*  try {
     await verifyRecaptcha(token);
-  
+*/  
 
   // Check if name and email fields are provided
   if (!req.body.name || !req.body.email) {
     //if not provided, return an error
     return res.status(400).send("name and email are required. ( ˘ ³˘)❤");
   }
+
   //Check if the user is the player with the name and email
   let resp = await client
     .db("Assignment")
@@ -547,10 +548,38 @@ app.post("/userLogin", loginLimiter, async (req, res) => {
       res.send("Password not provided ⸨◺_◿⸩");
     }
   }
-} catch (error) {
+  const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
+  
+  if (!RECAPTCHA_SECRET_KEY) {
+    console.error("RECAPTCHA_SECRET_KEY is not defined. Please set it in the environment variables.");
+    process.exit(1);
+  }
+  
+  async function verifyRecaptcha(token) {
+    if (!token) {
+      throw new Error("No reCAPTCHA token provided");
+    }
+  
+    const response = await axios.post(
+      `https://www.google.com/recaptcha/api/siteverify`,
+      null,
+      {
+        params: {
+          secret: RECAPTCHA_SECRET_KEY,
+          response: token,
+        },
+      }
+    );
+  
+    if (!response.data.success) {
+      throw new Error("reCAPTCHA verification failed");
+    }
+  }
+  
+/*} catch (error) {
   console.error("Error verifying reCAPTCHA:", error.message);
   res.status(400).json({ message: error.message });
-}
+} */
 });
 
 
@@ -1728,15 +1757,7 @@ const client = new MongoClient('mongodb+srv://cluster0.tvusokw.mongodb.net/?auth
   tlsCertificateKeyFile: certPath,
   serverApi: ServerApiVersion.v1
 });
-// const client = new MongoClient(uri, {
-//   tls: true,
-//   tlsCertificateKeyFile: certPath,
-//   serverApi: {
-//     version: ServerApiVersion.v1,
-//     strict: true,
-//     deprecationErrors: true,
-//   },
-// }); 
+
 
 
 function verifyToken(req, res, next) {
