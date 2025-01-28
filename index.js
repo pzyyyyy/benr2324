@@ -37,7 +37,6 @@ app.use(express.urlencoded({ extended: true }));
 
 //login for admin
 app.post("/adminLogin", loginLimiter,async (req, res) => {
-  const token = req.body["g-recaptcha-response"];
   const recaptchaToken = req.body['g-recaptcha-response'];
   const isHuman = await verifyRecaptchaToken(recaptchaToken);
 
@@ -1711,25 +1710,6 @@ app.get("/", (req, res) => {
 </body>
 </html>`);
 });
-
-// Handle form submission and reCAPTCHA verification
-/*app.post('/', (req, res) => {
-  const token = req.body["g-recaptcha-response"];
-
-  verifyRecaptchaToken(token)
-    .then(success => {
-      if (success) {
-        res.status(200).json({ message: "reCAPTCHA verified successfully" });
-      } else {
-        res.status(400).json({ message: "reCAPTCHA verification failed" });
-      }
-    })
-    .catch(error => {
-      console.error("Error verifying reCAPTCHA:", error.message);
-      res.status(400).json({ message: error.message });
-    });
-});
-*/
 
 // Function to verify reCAPTCHA token
 async function verifyRecaptchaToken(token) {
