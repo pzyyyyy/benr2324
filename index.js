@@ -1690,7 +1690,7 @@ app.get("/", (req, res) => {
   </head>
   <body>
     <form action="?" method="POST">
-      <div class="g-recaptcha" data-sitekey="6LcJ1r8qAAAAAKNQRUumke5jTNxeRxfixAeAVJq9"></div>
+      <div class="g-recaptcha" data-sitekey="6LffhJIqAAAAAF2Ms7Qh4n8KJ-QrVBSZhu3Ru12_"></div>
       <br/>
       <input type="submit" value="Submit">
     </form>
