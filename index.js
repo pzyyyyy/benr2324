@@ -9,7 +9,7 @@ const validator = require("validator");
 const fs = require("fs");
 const forge = require("node-forge");
 const axios = require("axios");
-const verifyRecaptcha = require("./verifyRecaptcha"); // Import the verifyRecaptcha function
+//const verifyRecaptcha = require("./verifyRecaptcha"); // Import the verifyRecaptcha function
 
 
 // Configure rate limiting for all requests
@@ -403,7 +403,7 @@ app.post("/register", async (req, res) => {
     if (!isHuman) {
       return res.status(400).send("reCAPTCHA verification failed. Please try again.");
     }
-    
+
     // Check if name, email and password and fieldsw are provided
     if (
       !req.body.name ||
@@ -1710,7 +1710,7 @@ app.get("/", (req, res) => {
 });
 
 // Handle form submission and reCAPTCHA verification
-/*app.post('/', async (req, res) => {
+app.post('/', async (req, res) => {
   const token = req.body["g-recaptcha-response"];
 
   try {
@@ -1721,7 +1721,7 @@ app.get("/", (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
-*/
+
 
 // Function to verify reCAPTCHA token
 async function verifyRecaptchaToken(token) {
