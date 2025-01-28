@@ -379,10 +379,11 @@ app.delete(
 //Registration account for users
 app.post("/register", async (req, res) => {
   const { name, password } = req.body;
-  const token = req.body["g-recaptcha-response"];
+  const recaptchaToken = req.body['g-recaptcha-response'];
+  const isHuman = await verifyRecaptchaToken(recaptchaToken);
 
-  try {
-    await verifyRecaptcha(token);
+//  try {
+//    await verifyRecaptcha(token);
   
     // Define your password policy
     const isPasswordStrong = validator.isStrongPassword(password, {
@@ -399,6 +400,10 @@ app.post("/register", async (req, res) => {
       });
     }
 
+    if (!isHuman) {
+      return res.status(400).send("reCAPTCHA verification failed. Please try again.");
+    }
+    
     // Check if name, email and password and fieldsw are provided
     if (
       !req.body.name ||
@@ -487,16 +492,17 @@ app.post("/register", async (req, res) => {
         "Congratulation! Your account register succesfully!\nLog in to start your battle journey! \n( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ )"
       );
 
-} catch (error) {
-  console.error("Error verifying reCAPTCHA:", error.message);
-  res.status(400).json({ message: error.message });
-}
+//} catch (error) {
+//  console.error("Error verifying reCAPTCHA:", error.message);
+//  res.status(400).json({ message: error.message });
+//}
 });
 
 
 //login for users
 app.post("/userLogin", loginLimiter, async (req, res) => {
-  const token = req.body["g-recaptcha-response"];
+  const recaptchaToken = req.body['g-recaptcha-response'];
+  const isHuman = await verifyRecaptchaToken(recaptchaToken);
 
 /*  try {
     await verifyRecaptcha(token);
@@ -508,6 +514,9 @@ app.post("/userLogin", loginLimiter, async (req, res) => {
     return res.status(400).send("name and email are required. ( ˘ ³˘)❤");
   }
 
+  if (!isHuman) {
+    return res.status(400).send("reCAPTCHA verification failed. Please try again.");
+  }
   //Check if the user is the player with the name and email
   let resp = await client
     .db("Assignment")
@@ -546,33 +555,6 @@ app.post("/userLogin", loginLimiter, async (req, res) => {
     } else {
       //if the password is not provided, return an error
       res.send("Password not provided ⸨◺_◿⸩");
-    }
-  }
-  const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
-  
-  if (!RECAPTCHA_SECRET_KEY) {
-    console.error("RECAPTCHA_SECRET_KEY is not defined. Please set it in the environment variables.");
-    process.exit(1);
-  }
-  
-  async function verifyRecaptcha(token) {
-    if (!token) {
-      throw new Error("No reCAPTCHA token provided");
-    }
-  
-    const response = await axios.post(
-      `https://www.google.com/recaptcha/api/siteverify`,
-      null,
-      {
-        params: {
-          secret: RECAPTCHA_SECRET_KEY,
-          response: token,
-        },
-      }
-    );
-  
-    if (!response.data.success) {
-      throw new Error("reCAPTCHA verification failed");
     }
   }
   
@@ -1728,7 +1710,7 @@ app.get("/", (req, res) => {
 });
 
 // Handle form submission and reCAPTCHA verification
-app.post('/', async (req, res) => {
+/*app.post('/', async (req, res) => {
   const token = req.body["g-recaptcha-response"];
 
   try {
@@ -1739,6 +1721,13 @@ app.post('/', async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+*/
+
+// Function to verify reCAPTCHA token
+async function verifyRecaptchaToken(token) {
+  const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${token}`);
+  return response.data.success;
+}
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
