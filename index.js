@@ -1714,7 +1714,7 @@ app.post('/', async (req, res) => {
   const token = req.body["g-recaptcha-response"];
 
   try {
-    await verifyRecaptcha(token);
+    await verifyRecaptchaToken(token);
     res.status(200).json({ message: "reCAPTCHA verified successfully" });
   } catch (error) {
     console.error("Error verifying reCAPTCHA:", error.message);
